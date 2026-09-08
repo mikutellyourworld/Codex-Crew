@@ -15,7 +15,6 @@ src/codex_crew/acp/session_handle.py
 src/codex_crew/acp/worker_pool.py
 src/codex_crew/apps/__init__.py
 src/codex_crew/apps/app_storage.py
-src/codex_crew/apps/backend.py
 src/codex_crew/apps/bridges.py
 src/codex_crew/apps/builtins/auto_improvement/backend/routes.py
 src/codex_crew/apps/builtins/auto_improvement/spine/gate.py
@@ -163,8 +162,8 @@ src/codex_crew/artifact_source.py
 src/codex_crew/artifacts.py
 src/codex_crew/beacon.py
 src/codex_crew/builtin_skills/browser-recording/scripts/record_browser.py
-src/codex_crew/builtin_skills/ios-simulator-preview/scripts/sim_mirror.py
 src/codex_crew/builtin_skills/codexcrew-dev/prepare-pr/scripts/local_review.py
+src/codex_crew/builtin_skills/ios-simulator-preview/scripts/sim_mirror.py
 src/codex_crew/changelog.py
 src/codex_crew/channel_history.py
 src/codex_crew/channel_transcript_migration.py
@@ -177,7 +176,6 @@ src/codex_crew/cloud/connect.py
 src/codex_crew/cloud/ec2.py
 src/codex_crew/cloud/launch_engine.py
 src/codex_crew/cloud/launch_job.py
-src/codex_crew/config/paths.py
 src/codex_crew/config/schema.py
 src/codex_crew/config/validation.py
 src/codex_crew/connections/alias_record.py
@@ -233,7 +231,6 @@ src/codex_crew/dashboard/tailnet_serve.py
 src/codex_crew/dashboard/terminal_commands.py
 src/codex_crew/dashboard/theme_validate.py
 src/codex_crew/dashboard/token_secret.py
-src/codex_crew/dashboard/urls.py
 src/codex_crew/dashboard/ws_event_scope.py
 src/codex_crew/deploy/__init__.py
 src/codex_crew/deploy/engine.py
@@ -406,7 +403,6 @@ test/test_api_kiro_hooks.py
 test/test_api_models_retry.py
 test/test_api_server.py
 test/test_api_shutdown.py
-test/test_app_backend.py
 test/test_app_backend_stale_reap.py
 test/test_app_bridges.py
 test/test_app_cli.py
@@ -526,7 +522,6 @@ test/test_cloud_handlers.py
 test/test_cloud_launch_job.py
 test/test_collection_status_endpoint.py
 test/test_completion_result_read_off_loop.py
-test/test_computer_use_apps.py
 test/test_computer_use_overlay.py
 test/test_computer_use_skylight.py
 test/test_computer_use_snapshot_macos.py
