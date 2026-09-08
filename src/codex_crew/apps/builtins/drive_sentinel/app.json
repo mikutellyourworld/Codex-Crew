@@ -1,0 +1,65 @@
+{
+  "name": "drive-sentinel",
+  "displayName": "Drive Sentinel",
+  "version": "1.3.0",
+  "description": "Inspect fixed and removable drives before cleanup. Drive Sentinel keeps scans explicit, measures live disk usage, separates cloud-backed files from local bytes, and refuses unsafe unattended cleanup.",
+  "author": "Codex Crew",
+  "license": "Apache-2.0",
+  "minCodexCrewVersion": "0.7.0",
+  "tags": [
+    "disk",
+    "storage",
+    "windows",
+    "maintenance",
+    "safety"
+  ],
+  "defaultEnabled": true,
+  "highlights": [
+    "Selection measures the live volume without starting an automatic scan",
+    "Cleanup stays locked until the selected drive and indexed root agree",
+    "Unattended cleanup is restricted to safe system-drive cache targets",
+    "Cloud-backed roots remain measure-only unless the provider supports a safe operation"
+  ],
+  "useCases": [
+    "Find what is consuming a local drive before deciding whether to clean it.",
+    "Review safe, rebuildable cache targets separately from report-only data.",
+    "Monitor free space while keeping removable and cloud-backed storage explicit."
+  ],
+  "configuration": [
+    "Drive Sentinel accepts app requests only through Codex Crew's authenticated local proxy.",
+    "Scanning and cleanup are separate actions. A stale or mismatched index cannot unlock cleanup.",
+    "Audit records stay under the configured Codex Crew data home, never inside the installed package."
+  ],
+  "iconPath": "art/icon.svg",
+  "heroImage": "art/hero-light.svg",
+  "heroImageDark": "art/hero-dark.svg",
+  "ui": {
+    "entry": "ui/index.mjs",
+    "sidebar": {
+      "section": "Apps",
+      "order": 15
+    },
+    "pages": [
+      {
+        "route": "/drive-sentinel",
+        "label": "Drive Sentinel",
+        "icon": "HardDrive",
+        "iconUrl": "ui/icon.svg"
+      }
+    ]
+  },
+  "backend": {
+    "entryPoint": "codex_crew.apps.builtins.drive_sentinel.backend",
+    "port": "auto",
+    "healthCheck": "/health"
+  },
+  "permissions": {
+    "api": [
+      "/apps/drive-sentinel/api",
+      "/apps/drive-sentinel/api/*"
+    ],
+    "network": false,
+    "storage": true,
+    "cron": false
+  }
+}

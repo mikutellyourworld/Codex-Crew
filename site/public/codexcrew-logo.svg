@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Codex Crew terminal mark">
+  <defs>
+    <linearGradient id="shell" x1="80" y1="64" x2="430" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#182126"/>
+      <stop offset="1" stop-color="#06090b"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="35" y="45" width="442" height="422" rx="86" fill="url(#shell)" stroke="#e9eeec" stroke-width="10"/>
+  <path d="M35 140h442" stroke="#e9eeec" stroke-opacity=".32" stroke-width="8"/>
+  <circle cx="92" cy="94" r="15" fill="#3f474b"/>
+  <circle cx="139" cy="94" r="15" fill="#3f474b"/>
+  <circle cx="186" cy="94" r="15" fill="#7c3aed"/>
+  <path d="m122 231 72 62-72 62" fill="none" stroke="#c9ff38" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M238 355h127" stroke="#c9ff38" stroke-width="24" stroke-linecap="round"/>
+</svg>

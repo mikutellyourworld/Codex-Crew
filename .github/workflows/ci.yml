@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            website/package-lock.json
+            website/electron/package-lock.json
+      - name: Install backend
+        run: python -m pip install -e ".[dev]"
+      - name: Verify public provider and Drive Sentinel contracts
+        run: >-
+          python -m pytest -n 0
+          test/test_codex_crew_public_contract.py
+          test/test_public_agent_backends.py
+          test/test_codex_tool_gate.py
+          test/test_openai_compatible_adapter.py
+          test/test_openai_compatible_profiles.py
+          test/test_openai_provider_factory.py
+          test/test_openai_profiles_api.py
+          test/test_openai_compat.py
+          test/test_drive_sentinel.py
+      - name: Build dashboard
+        working-directory: website
+        run: npm ci --no-audit --no-fund && npm run build
+      - name: Test public provider and branding UI
+        working-directory: website
+        run: >-
+          npm exec vitest -- run
+          src/test/AgentBackendTab.test.tsx
+          src/test/AcpAdapter.usage.test.ts
+          src/test/CodexAccountModal.test.tsx
+          src/i18n/productName.test.ts
+          src/pages/chat/share/ShareMessageModal.test.tsx
+          src/test/CodexCrewMark.test.tsx
+      - name: Test desktop shell
+        working-directory: website/electron
+        run: >-
+          npm ci --no-audit --no-fund &&
+          node --test
+          test/home-dir.test.js
+          test/gateway-supervisor.test.js
+          test/gateway-env.test.js
+          test/find-bin.test.js
+          test/windows-port.test.js
