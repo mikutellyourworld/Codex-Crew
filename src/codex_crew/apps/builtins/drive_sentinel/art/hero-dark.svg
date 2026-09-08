@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 250" width="800" height="250" role="img" aria-label="A capacity bar with reclaimed segments above a rising free-space line">
+  <rect width="800" height="250" fill="#07110e"/>
+
+  <text x="60" y="52" font-family="ui-monospace, monospace" font-size="13" fill="#72a183">ON DISK</text>
+  <rect x="60" y="64" width="680" height="26" rx="2" fill="#193126"/>
+  <rect x="60" y="64" width="392" height="26" rx="2" fill="#35d06f"/>
+  <g fill="none" stroke="#f6b94a" stroke-width="2" stroke-dasharray="5 4" opacity="0.9">
+    <rect x="456" y="65" width="104" height="24" rx="1"/>
+    <rect x="566" y="65" width="76" height="24" rx="1"/>
+    <rect x="648" y="65" width="46" height="24" rx="1"/>
+  </g>
+  <text x="740" y="52" text-anchor="end" font-family="ui-monospace, monospace" font-size="13" fill="#72a183">RECLAIMABLE</text>
+
+  <polyline points="60,196 170,192 170,170 300,166 300,142 430,138 430,116 560,112 560,96 740,92"
+            fill="none" stroke="#35d06f" stroke-width="3" stroke-linejoin="miter"/>
+  <rect x="735" y="87" width="10" height="10" fill="#35d06f"/>
+  <line x1="60" y1="214" x2="740" y2="214" stroke="#274a39" stroke-width="1"/>
+  <g font-family="ui-monospace, monospace" font-size="12" fill="#72a183">
+    <text x="60" y="234">measure</text>
+    <text x="230" y="234">tier by risk</text>
+    <text x="410" y="234">dry run</text>
+    <text x="560" y="234">shed</text>
+    <text x="700" y="234">free</text>
+  </g>
+</svg>

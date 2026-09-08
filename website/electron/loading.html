@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex Crew</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(rgba(124, 58, 237, .06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124, 58, 237, .06) 1px, transparent 1px),
+        radial-gradient(circle at 50% 45%, #182022 0, #0a0d10 58%, #050608 100%);
+      background-size: 34px 34px, 34px 34px, auto;
+      color: #f2f4f3;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    #stage { display: grid; place-items: center; gap: 22px; transition: opacity .35s ease; }
+    #stage.gone { opacity: 0; }
+    .terminal {
+      position: relative;
+      width: 152px;
+      height: 126px;
+      border: 2px solid rgba(242, 244, 243, .9);
+      border-radius: 23px;
+      background: linear-gradient(145deg, #10171a, #05080a);
+      box-shadow: 0 26px 80px rgba(0, 0, 0, .58), 0 0 34px rgba(124, 58, 237, .16);
+      animation: breathe 1.8s ease-in-out infinite alternate;
+    }
+    .terminal::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 27px;
+      height: 1px;
+      background: rgba(242, 244, 243, .25);
+    }
+    .terminal::after {
+      content: '';
+      position: absolute;
+      top: 11px;
+      left: 15px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #474f54;
+      box-shadow: 15px 0 #474f54, 30px 0 #7c3aed;
+    }
+    .prompt {
+      position: absolute;
+      left: 25px;
+      top: 53px;
+      color: #c9ff38;
+      font-size: 37px;
+      font-weight: 800;
+      letter-spacing: -4px;
+      text-shadow: 0 0 16px rgba(201, 255, 56, .35);
+    }
+    .cursor {
+      display: inline-block;
+      width: 22px;
+      height: 4px;
+      margin-left: 13px;
+      background: #c9ff38;
+      vertical-align: 7px;
+      animation: blink .85s steps(1) infinite;
+    }
+    .copy { text-align: center; }
+    .name { font-size: 18px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    #status { margin-top: 8px; color: #8b9690; font-size: 11px; letter-spacing: .08em; }
+    @keyframes breathe { from { transform: translateY(2px); } to { transform: translateY(-3px); } }
+    @keyframes blink { 50% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .terminal, .cursor { animation: none; } }
+  </style>
+</head>
+<body>
+  <main id="stage" aria-label="Codex Crew is starting">
+    <div class="terminal" aria-hidden="true"><span class="prompt">&gt;<span class="cursor"></span></span></div>
+    <div class="copy">
+      <div class="name">Codex Crew</div>
+      <div id="status">Starting local gateway</div>
+    </div>
+  </main>
+  <script>
+    (function () {
+      var stage = document.getElementById('stage');
+      var status = document.getElementById('status');
+      var finished = false;
+
+      function finish() {
+        if (finished) return;
+        finished = true;
+        status.textContent = 'Connected';
+        setTimeout(function () {
+          stage.classList.add('gone');
+          setTimeout(function () {
+            try {
+              if (window.electronAPI && window.electronAPI.bootComplete) window.electronAPI.bootComplete();
+            } catch (_) {}
+          }, 380);
+        }, 420);
+      }
+
+      if (window.electronAPI && window.electronAPI.onStatus) {
+        window.electronAPI.onStatus(function (message) {
+          if (message) status.textContent = String(message);
+        });
+      }
+      if (window.electronAPI && window.electronAPI.onBootReady) {
+        window.electronAPI.onBootReady(finish);
+      } else {
+        setTimeout(finish, 1800);
+      }
+    })();
+  </script>
+</body>
+</html>

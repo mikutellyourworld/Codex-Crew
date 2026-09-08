@@ -1,0 +1,197 @@
+"""Tests for agent sync prune logic in dashboard/handlers/agents.py."""
+
+from __future__ import annotations
+
+import json
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from codex_crew.agent_discovery import AgentInfo
+from codex_crew.config.loader import CodexCrewAgentConfig, CodexCrewConfig
+
+
+def _make_aim_agent(name: str) -> AgentInfo:
+    return AgentInfo(
+        name=name,
+        filename=f"local-OmniAgents-{name}.json",
+        description=f"{name} agent",
+        model="auto",
+        source="aim",
+        package="OmniAgents",
+    )
+
+
+def _make_config(agents: dict[str, CodexCrewAgentConfig]) -> CodexCrewConfig:
+    """Create a MagicMock standing in for CodexCrewConfig with the given agents dict."""
+    cfg = MagicMock(spec=CodexCrewConfig)
+    cfg.agents = agents
+    cfg.default_agent = "codexcrew"
+    cfg.save = MagicMock()
+    return cfg
+
+
+async def _run_sync(cfg: CodexCrewConfig, aim_agents_list: list[AgentInfo]) -> dict:
+    """Invoke the production _do_agents_sync with mocked dependencies and return parsed body."""
+    from codex_crew.dashboard.handlers.agents import _do_agents_sync
+
+    request = MagicMock()
+    request.get.return_value = "dashboard"
+
+    sel_mock = MagicMock()
+
+    with (
+        patch("codex_crew.dashboard.handlers.agents.CodexCrewConfig.load", return_value=cfg),
+        patch("codex_crew.dashboard.handlers.agents.list_agents", return_value=aim_agents_list),
+        patch("codex_crew.dashboard.handlers.agents._sel", return_value=sel_mock),
+    ):
+        response = await _do_agents_sync(request)
+
+    assert response.body is not None
+    return json.loads(response.body)
+
+
+class TestAgentSyncPrune:
+    """Tests for the prune step in _do_agents_sync (real production code path)."""
+
+    @pytest.mark.asyncio
+    async def test_prune_removes_stale_aim_agents(self):
+        """Agents with source='aim' not in scan results get pruned."""
+        agents = {
+            "omni-reviewer": CodexCrewAgentConfig(kiro_agent="omni-reviewer", source="aim"),
+            "omni-aws": CodexCrewAgentConfig(kiro_agent="omni-aws", source="aim"),
+            "gpu-dev": CodexCrewAgentConfig(kiro_agent="gpu-dev", source="aim"),
+        }
+        cfg = _make_config(agents)
+        aim_list = [_make_aim_agent("omni-aws"), _make_aim_agent("gpu-dev")]
+
+        body = await _run_sync(cfg, aim_list)
+
+        assert body["pruned"] == ["omni-reviewer"]
+        assert "omni-reviewer" not in cfg.agents
+        assert "omni-aws" in cfg.agents
+        assert "gpu-dev" in cfg.agents
+        cfg.save.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_prune_skips_codexcrew_owned_agents(self):
+        """Agents with source='codexcrew' are never pruned."""
+        agents = {
+            "codexcrew": CodexCrewAgentConfig(kiro_agent="codexcrew", source="codexcrew"),
+            "stale-aim": CodexCrewAgentConfig(kiro_agent="stale-aim", source="aim"),
+        }
+        cfg = _make_config(agents)
+        aim_list = [_make_aim_agent("gpu-dev")]
+
+        body = await _run_sync(cfg, aim_list)
+
+        assert "stale-aim" in body["pruned"]
+        assert "codexcrew" not in body["pruned"]
+        assert "codexcrew" in cfg.agents
+
+    @pytest.mark.asyncio
+    async def test_prune_skips_user_created_agents(self):
+        """Agents with source='builtin' (user-created) are never pruned."""
+        agents = {
+            "my-custom": CodexCrewAgentConfig(kiro_agent="my-custom", source="builtin"),
+            "stale-aim": CodexCrewAgentConfig(kiro_agent="stale-aim", source="aim"),
+        }
+        cfg = _make_config(agents)
+        aim_list = [_make_aim_agent("gpu-dev")]
+
+        body = await _run_sync(cfg, aim_list)
+
+        assert "stale-aim" in body["pruned"]
+        assert "my-custom" not in body["pruned"]
+        assert "my-custom" in cfg.agents
+
+    @pytest.mark.asyncio
+    async def test_no_prune_when_scan_returns_empty(self):
+        """Empty scan result (likely transient failure) should not prune anything."""
+        agents = {
+            "omni-aws": CodexCrewAgentConfig(kiro_agent="omni-aws", source="aim"),
+            "gpu-dev": CodexCrewAgentConfig(kiro_agent="gpu-dev", source="aim"),
+        }
+        cfg = _make_config(agents)
+        aim_list: list[AgentInfo] = []
+
+        body = await _run_sync(cfg, aim_list)
+
+        assert body["pruned"] == []
+        assert body["synced"] == []
+        assert "omni-aws" in cfg.agents
+        assert "gpu-dev" in cfg.agents
+        cfg.save.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_add_and_prune_in_same_sync(self):
+        """A single sync both adds new agents and prunes stale ones."""
+        agents = {
+            "old-agent": CodexCrewAgentConfig(kiro_agent="old-agent", source="aim"),
+        }
+        cfg = _make_config(agents)
+        aim_list = [_make_aim_agent("new-agent")]
+
+        body = await _run_sync(cfg, aim_list)
+
+        assert body["synced"] == ["new-agent"]
+        assert body["pruned"] == ["old-agent"]
+        assert "new-agent" in cfg.agents
+        assert "old-agent" not in cfg.agents
+        cfg.save.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_noop_when_nothing_changed(self):
+        """No adds or prunes when config matches scan exactly."""
+        agents = {
+            "omni-aws": CodexCrewAgentConfig(kiro_agent="omni-aws", source="aim"),
+        }
+        cfg = _make_config(agents)
+        aim_list = [_make_aim_agent("omni-aws")]
+
+        body = await _run_sync(cfg, aim_list)
+
+        assert body["synced"] == []
+        assert body["pruned"] == []
+        cfg.save.assert_not_called()
+
+
+class TestSyncRefusesCredentialShapedNames:
+    """The SECOND way a name reaches `cfg.agents`, which the create route cannot see.
+
+    A discovered spec's name is package-controlled, not typed by the owner, so
+    "the owner is reading a string the owner wrote" does not hold for it: a package
+    could land a credential-shaped name that then reaches the roster. Refused at
+    this source too (#8454).
+    """
+
+    PROBE = "AKIAIOSFODNN7EXAMPLE"
+
+    @pytest.mark.asyncio
+    async def test_a_credential_shaped_discovered_name_is_not_synced(self):
+        cfg = _make_config({})
+        body = await _run_sync(cfg, [_make_aim_agent(self.PROBE)])
+        assert self.PROBE not in cfg.agents, "a credential-shaped package name was stored"
+        assert self.PROBE not in json.dumps(body), "the name was echoed into the response"
+
+    @pytest.mark.asyncio
+    async def test_an_ordinary_discovered_name_still_syncs(self):
+        """The direction that proves the refusal is narrow, not a blanket."""
+        cfg = _make_config({})
+        await _run_sync(cfg, [_make_aim_agent("oncall-triage")])
+        assert "oncall-triage" in cfg.agents
+
+
+class TestAgentSyncFsCheckIsOffloaded:
+    """The per-agent on-disk existence check (a stat + a namespaced glob) runs in
+    a loop over discovered agents; on a populated agents directory it must be
+    offloaded or the gateway loop and heartbeat stall."""
+
+    def test_the_on_disk_check_is_awaited_off_loop(self) -> None:
+        import inspect
+
+        from codex_crew.dashboard.handlers import agents
+
+        src = inspect.getsource(agents._do_agents_sync)
+        assert "await asyncio.to_thread(" in src
+        assert "_namespaced_agent_file_exists(_dn)" in src, "the FS check must run off-loop"

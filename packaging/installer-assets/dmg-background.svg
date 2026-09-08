@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="400" viewBox="0 0 660 400">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="72%">
+      <stop stop-color="#1a2225"/>
+      <stop offset="1" stop-color="#050708"/>
+    </radialGradient>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M28 0H0v28" fill="none" stroke="#7c3aed" stroke-opacity=".08"/>
+    </pattern>
+  </defs>
+  <rect width="660" height="400" fill="url(#bg)"/>
+  <rect width="660" height="400" fill="url(#grid)"/>
+  <rect x="263" y="55" width="134" height="118" rx="24" fill="#080c0e" stroke="#edf2ef" stroke-width="4"/>
+  <path d="M263 89h134" stroke="#edf2ef" stroke-opacity=".3" stroke-width="2"/>
+  <circle cx="284" cy="72" r="5" fill="#4a5256"/>
+  <circle cx="301" cy="72" r="5" fill="#4a5256"/>
+  <circle cx="318" cy="72" r="5" fill="#7c3aed"/>
+  <path d="m286 114 23 19-23 19" fill="none" stroke="#c9ff38" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M325 152h43" stroke="#c9ff38" stroke-width="8" stroke-linecap="round"/>
+  <text x="330" y="211" fill="#edf2ef" font-family="Helvetica Neue, sans-serif" font-size="21" font-weight="700" text-anchor="middle" letter-spacing="3">CODEX CREW</text>
+  <text x="330" y="237" fill="#829089" font-family="Menlo, monospace" font-size="10" text-anchor="middle" letter-spacing="1.5">DRAG TO APPLICATIONS</text>
+  <path d="M267 292h126" stroke="#c9ff38" stroke-width="3" stroke-linecap="round"/>
+  <path d="m380 279 14 13-14 13" fill="none" stroke="#c9ff38" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

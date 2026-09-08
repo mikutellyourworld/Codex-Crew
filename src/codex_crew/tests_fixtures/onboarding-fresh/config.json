@@ -1,0 +1,11 @@
+{
+  "meta": {
+    "version": 1,
+    "created_by": "codexcrew-fixture"
+  },
+  "dashboard": {
+    "host": "127.0.0.1",
+    "onboarded": false
+  },
+  "timezone": "UTC"
+}

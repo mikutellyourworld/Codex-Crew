@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="57" viewBox="0 0 150 57">
+  <rect width="150" height="57" fill="#0b1012"/>
+  <path d="M0 56.5H150" stroke="#283235"/>
+  <rect x="9" y="9" width="37" height="39" rx="6" fill="#06090b" stroke="#829089"/>
+  <path d="M9 20h37" stroke="#829089" stroke-opacity=".45"/>
+  <circle cx="16" cy="15" r="1.8" fill="#4a5256"/>
+  <circle cx="22" cy="15" r="1.8" fill="#4a5256"/>
+  <circle cx="28" cy="15" r="1.8" fill="#7c3aed"/>
+  <path d="m16 29 6 5-6 5" fill="none" stroke="#c9ff38" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M27 39h10" stroke="#c9ff38" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="58" y="25" fill="#edf2ef"
+    font-family="Segoe UI, sans-serif" font-size="15" font-weight="700">CODEX</text>
+  <text x="58" y="43" fill="#c9ff38"
+    font-family="Segoe UI, sans-serif" font-size="15" font-weight="700">CREW</text>
+</svg>
