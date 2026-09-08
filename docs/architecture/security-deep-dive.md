@@ -55,6 +55,7 @@ DNS rebinding, unauthenticated remote access, and the rest) is in
 | Operator ceiling ↔ agent | keystone files under the data home | every agent read/write path | `security.is_sensitive_path` / `is_sensitive_write_path` |
 | Agent output ↔ any human or external service | nothing | all agent-derived text | `redact_credentials` / `redact_exfiltration_urls` / `StreamRedactor` |
 | Browser ↔ dashboard | authenticated session | any other origin or host | token auth, CSRF Origin check, Host allowlist |
+| Owner ↔ Codex installer | authenticated dashboard owner | downloaded installer bytes | owner gate, trusted final-host check, size and time bounds, fixed argv, post-install identity probe |
 | Slack workspace ↔ gateway | owner + allowlisted users | every other Slack sender | owner lock, `is_allowed_user`, Enterprise Grid check |
 
 The single most important structural property: **the PreToolUse gate is
@@ -62,6 +63,15 @@ Codex Crew's own gate, not the agent's.** Denied commands and the governance
 ceiling are evaluated in `hooks.py` and are never written into a `kiro-cli` agent
 JSON, so an agent config that omits or edits its own deny list cannot weaken the
 ceiling.
+
+The one-click Codex bootstrap is an explicit host mutation, not an agent tool.
+Only the authenticated dashboard owner can start it. The gateway downloads the
+platform installer from OpenAI, rejects redirects outside the trusted host set,
+caps the payload and execution time, writes it only to a temporary directory,
+and launches it with a fixed argument vector and non-interactive mode. It never
+pipes network bytes into a shell, never requests elevation, and accepts success
+only after the resulting executable identifies itself as `codex-cli`. Concurrent
+clicks are rejected while the worker owns the install lock.
 
 ## How the layers compose
 

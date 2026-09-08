@@ -20,17 +20,22 @@ draw, so this module imports nothing from ``codex_crew.acp`` at any scope.
 Three states, and the third is not padding. ``UNKNOWN`` means the CHECK failed
 -- a resolver raised, or no probe exists for the id -- and it must never be
 reported as ``MISSING``: that tells someone to install what they may already
-have, and the remedy is a global npm install.
+have. The manual remedy may be a global npm install; the owner-triggered Codex
+bootstrap instead keeps its adapter repair under the app data home.
 """
 
 from __future__ import annotations
 
 import logging
+import os
+import shutil
+import subprocess
 import threading
 import time
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Tuple
 
+from codex_crew import codex_cli
 from codex_crew.acp_backends import (
     ACP_BACKEND_CODEX,
     ACP_BACKEND_OPENAI_COMPATIBLE,
@@ -38,6 +43,9 @@ from codex_crew.acp_backends import (
     POLICY_ID_BY_BACKEND,
 )
 from codex_crew.agent_sdk.drivers import acp as acp_driver
+from codex_crew.config.paths import config_dir
+from codex_crew.env import augmented_path
+from codex_crew.subprocess_utf8 import UTF8_TEXT
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +58,14 @@ INSTALLED = "installed"
 MISSING = "missing"
 UNKNOWN = "unknown"
 
-#: The codex-acp adapter. ONE component, not two: the adapter ships its own
-#: compatible Codex binary, so there is no second executable Crew resolves.
+#: The codex-acp adapter is the required transport. Its bundled Codex runtime is
+#: a fallback; an external Codex CLI is discovered and reported separately.
 COMPONENT_CODEX_ACP_ADAPTER = "codex-acp"
+PINNED_CODEX_ACP_PACKAGE = "@agentclientprotocol/codex-acp@1.10.0"
+CODEX_CLI_EXTERNAL = "external"
+CODEX_CLI_BUNDLED = "bundled"
+CODEX_CLI_MISSING = "missing"
+CODEX_CLI_UNKNOWN = "unknown"
 
 #: How long a verdict is reused. The dashboard polls this endpoint, so an
 #: uncached probe would repeat filesystem work per poll. Module-level and read at call time (not
@@ -86,6 +99,26 @@ class BackendInstallState:
     missing_components: Tuple[str, ...] = ()
     install_command: str = ""
     restart_required: bool = False
+    codex_cli_source: str = ""
+    codex_cli_version: str = ""
+    one_click_install: bool = False
+
+
+@dataclass(frozen=True)
+class CodexBootstrapResult:
+    """Verified result of the operator-triggered Codex bootstrap."""
+
+    ok: bool
+    codex_cli: codex_cli.CodexCliInstallation
+    adapter_ready: bool
+
+
+class CodexBootstrapError(RuntimeError):
+    """A safe error code and message for the one-click API boundary."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 #: Backend id → its probe. A registry rather than an ``if`` chain so an id with
@@ -105,12 +138,24 @@ def _probe_codex() -> BackendInstallState:
     restart to use it" rather than a promise the next spawn breaks.
     """
     policy_id = _policy_id(ACP_BACKEND_CODEX)
+    try:
+        cli = acp_driver.codex_cli_installation()
+        cli_source = CODEX_CLI_EXTERNAL if cli is not None else CODEX_CLI_BUNDLED
+        cli_version = cli[1] if cli is not None else ""
+    except Exception:
+        logger.warning("Codex CLI discovery failed", exc_info=True)
+        cli_source = CODEX_CLI_UNKNOWN
+        cli_version = ""
+
     if acp_driver.codex_adapter_resolves():
         return BackendInstallState(
             ACP_BACKEND_CODEX,
             policy_id,
             INSTALLED,
             restart_required=acp_driver.codex_adapter_cached_negative(),
+            codex_cli_source=cli_source,
+            codex_cli_version=cli_version,
+            one_click_install=cli_source == CODEX_CLI_BUNDLED,
         )
     return BackendInstallState(
         ACP_BACKEND_CODEX,
@@ -118,7 +163,80 @@ def _probe_codex() -> BackendInstallState:
         MISSING,
         (COMPONENT_CODEX_ACP_ADAPTER,),
         acp_driver.codex_adapter_install_command(),
+        codex_cli_source=(
+            CODEX_CLI_EXTERNAL if cli_source == CODEX_CLI_EXTERNAL else CODEX_CLI_MISSING
+        ),
+        codex_cli_version=cli_version,
+        one_click_install=cli_source != CODEX_CLI_UNKNOWN,
     )
+
+
+def _install_codex_adapter() -> None:
+    """Install the pinned adapter into Codex Crew's user-owned tools directory."""
+
+    search_path = augmented_path(os.environ.get("PATH", ""))
+    npm = shutil.which("npm", path=search_path)
+    if not npm:
+        raise CodexBootstrapError(
+            "npm_missing", "Node.js and npm are required to install the Codex adapter."
+        )
+    home = config_dir()
+    prefix = home / "tools" / "codex-acp"
+    prefix.mkdir(parents=True, exist_ok=True)
+    argv = [
+        npm,
+        "install",
+        "--prefix",
+        str(prefix),
+        "--omit=dev",
+        "--no-save",
+        "--no-package-lock",
+        "--no-audit",
+        "--no-fund",
+        PINNED_CODEX_ACP_PACKAGE,
+    ]
+    try:
+        result = subprocess.run(  # noqa: S603 - npm path resolved without a shell
+            argv,
+            cwd=home,
+            capture_output=True,
+            timeout=300,
+            check=False,
+            **UTF8_TEXT,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise CodexBootstrapError(
+            "adapter_install_failed", "Could not run the Codex adapter installer."
+        ) from exc
+    entry = prefix / "node_modules" / "@agentclientprotocol" / "codex-acp" / "dist" / "index.js"
+    dependency = prefix / "node_modules" / "@agentclientprotocol" / "sdk"
+    if result.returncode != 0 or not entry.is_file() or not dependency.is_dir():
+        raise CodexBootstrapError(
+            "adapter_install_failed", "The Codex adapter installation did not complete."
+        )
+
+
+def bootstrap_codex() -> CodexBootstrapResult:
+    """Install missing Codex pieces, clear negative caches, and verify readiness."""
+
+    try:
+        installation = codex_cli.find_codex_cli()
+        if installation is None:
+            installation = codex_cli.install_official_codex_cli()
+    except codex_cli.CodexInstallError as exc:
+        raise CodexBootstrapError(exc.code, str(exc)) from exc
+
+    if not acp_driver.codex_adapter_resolves():
+        _install_codex_adapter()
+
+    acp_driver.clear_codex_resolution_caches()
+    clear_probe_cache()
+    adapter_ready = acp_driver.codex_adapter_resolves()
+    if not adapter_ready:
+        raise CodexBootstrapError(
+            "adapter_not_found", "The Codex adapter installed, but it could not be found."
+        )
+    return CodexBootstrapResult(True, installation, adapter_ready)
 
 
 def _probe_openai_compatible() -> BackendInstallState:
@@ -216,6 +334,9 @@ __all__ = [
     "MISSING",
     "UNKNOWN",
     "BackendInstallState",
+    "CodexBootstrapError",
+    "CodexBootstrapResult",
+    "bootstrap_codex",
     "clear_probe_cache",
     "probe_backend",
     "probe_backends",

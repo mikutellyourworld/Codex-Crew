@@ -1195,6 +1195,18 @@ export interface AcpBackendProbe {
    * that is guaranteed to error.
    */
   restart_required: boolean
+  /** Validated standalone Codex CLI source. Empty for non-Codex backends. */
+  codex_cli_source?: 'external' | 'bundled' | 'missing' | 'unknown' | ''
+  codex_cli_version?: string
+  /** Whether the owner can repair or install this Codex path from the dashboard. */
+  one_click_install?: boolean
+}
+
+export interface CodexBootstrapResponse {
+  ok: boolean
+  codex_cli: { version: string; source: string }
+  adapter_ready: boolean
+  backends: AcpBackendProbe[]
 }
 
 export interface OpenAICompatibleProfile {
@@ -2916,6 +2928,7 @@ export const api = {
   // caller as a rejection, which is the intended signal: "no probe information",
   // to be treated as fail-open rather than as a verdict.
   acpBackends: () => fetch('/api/acp-backends').then(j) as Promise<{ backends: AcpBackendProbe[] }>,
+  installCodex: () => post('/api/acp-backends/codex/install').then(j) as Promise<CodexBootstrapResponse>,
   openAIProfiles: () => fetch('/api/openai-profiles').then(j) as Promise<OpenAICompatibleProfilesResponse>,
   saveOpenAIProfile: (profile: Record<string, unknown>) =>
     post('/api/openai-profiles', profile).then(j) as Promise<OpenAICompatibleProfilesResponse>,

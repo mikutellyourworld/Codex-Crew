@@ -10315,6 +10315,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "L’environnement d’exécution Codex inclus est utilisé.",
+        "codex_runtime_external": "Codex CLI {{version}} installé sur cette machine est utilisé.",
+        "codex_runtime_missing": "Codex CLI n’est pas installé sur cette machine.",
+        "could_not_install_codex_cli": "Impossible d’installer Codex CLI. Consultez le journal du gateway et réessayez.",
+        "install_and_connect_codex": "Installer et connecter Codex",
         "agent_backend": "Backend de l’agent",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code demande normalement une autorisation avant d'agir, et {{productName}} filtre cette demande. Mais un outil pré-approuvé dans les réglages propres à Claude — y compris via un .claude/settings.json dans le projet — ne demande rien, si bien que les règles de refus et le journal d'audit ne voient pas cet appel.",

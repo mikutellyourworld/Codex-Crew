@@ -10462,6 +10462,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "Используется встроенная среда выполнения Codex.",
+        "codex_runtime_external": "Используется Codex CLI {{version}} с этого компьютера.",
+        "codex_runtime_missing": "Codex CLI не установлен на этом компьютере.",
+        "could_not_install_codex_cli": "Не удалось установить Codex CLI. Проверьте журнал gateway и повторите попытку.",
+        "install_and_connect_codex": "Установить и подключить Codex",
         "agent_backend": "Бэкенд агента",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code обычно запрашивает разрешение перед действием, и {{productName}} проверяет этот запрос. Но инструмент, заранее одобренный в собственных настройках Claude — включая .claude/settings.json внутри проекта — не запрашивает ничего, поэтому правила запрета и журнал аудита не видят такой вызов.",

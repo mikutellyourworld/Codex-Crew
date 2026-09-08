@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Boxes, Terminal } from 'lucide-react'
+import { Boxes, Loader2, Terminal } from 'lucide-react'
 
 import { api } from '../../api/client'
-import type { AcpBackendProbe } from '../../api/client'
+import type { AcpBackendProbe, CodexBootstrapResponse } from '../../api/client'
 import ErrorNotice from '../../components/ErrorNotice'
 import { SettingsCard, SettingsButtonGroup } from '../../components/settings'
 import { useConfigSchema } from '../../components/settingRef/useConfigSchema'
+import { Btn } from '../../components/ui'
 import { i18nT } from '../../i18n/t'
 
 /** The config field the switch owns. Also the schema path the options are gated on. */
@@ -126,6 +127,7 @@ const PROBE_REFRESH_MS = 30_000
 export function AgentBackendTab() {
   const qc = useQueryClient()
   const [saveError, setSaveError] = useState('')
+  const [installError, setInstallError] = useState('')
   const schema = useConfigSchema()
 
   const cfgQ = useQuery<{ agent?: { acp_backend?: string } }>({
@@ -166,6 +168,17 @@ export function AgentBackendTab() {
     // straight from the query, so a rejected PATCH needs no revert — the cache was
     // never moved off the server's answer.
     onError: () => setSaveError(i18nT('pages.developer.agentBackendTab.could_not_save_the_agent_backend')),
+  })
+
+  const installMut = useMutation<CodexBootstrapResponse>({
+    mutationFn: () => api.installCodex(),
+    onSuccess: data => {
+      setInstallError('')
+      qc.setQueryData(['acpBackends'], { backends: data.backends })
+    },
+    onError: () => setInstallError(
+      i18nT('pages.developer.agentBackendTab.could_not_install_codex_cli'),
+    ),
   })
 
   if (cfgQ.isLoading) {
@@ -423,9 +436,27 @@ export function AgentBackendTab() {
     return i18nT('pages.developer.agentBackendTab.experimental')
   }
 
+  const codexRuntimeStatus = (value: string): string => {
+    if (value !== CODEX) return ''
+    const row = probe(value)
+    if (row?.codex_cli_source === 'external' && row.codex_cli_version) {
+      return i18nT('pages.developer.agentBackendTab.codex_runtime_external', {
+        version: row.codex_cli_version,
+      })
+    }
+    if (row?.codex_cli_source === 'bundled') {
+      return i18nT('pages.developer.agentBackendTab.codex_runtime_bundled')
+    }
+    if (row?.codex_cli_source === 'missing') {
+      return i18nT('pages.developer.agentBackendTab.codex_runtime_missing')
+    }
+    return ''
+  }
+
   return (
     <>
       <ErrorNotice message={saveError} onDismiss={() => setSaveError('')} />
+      <ErrorNotice message={installError} onDismiss={() => setInstallError('')} />
       <SettingsCard>
         <SettingsButtonGroup
           label={i18nT('pages.developer.agentBackendTab.agent_backend')}
@@ -457,7 +488,22 @@ export function AgentBackendTab() {
                 className={`m-0 ${disabledOption(value) ? 'text-warn' : 'text-muted'}`}
               >
                 {status(value)}
+                {codexRuntimeStatus(value) && (
+                  <div className="mt-0.5 text-muted">{codexRuntimeStatus(value)}</div>
+                )}
                 {caveat(value) && <div className="mt-0.5 text-muted">{caveat(value)}</div>}
+                {value === CODEX && probe(value)?.one_click_install && (
+                  <Btn
+                    type="button"
+                    primary
+                    className="mt-2"
+                    disabled={installMut.isPending}
+                    onClick={() => installMut.mutate()}
+                  >
+                    {installMut.isPending && <Loader2 className="lucide-inline animate-spin" />}
+                    {i18nT('pages.developer.agentBackendTab.install_and_connect_codex')}
+                  </Btn>
+                )}
               </dd>
             </div>
           ))}

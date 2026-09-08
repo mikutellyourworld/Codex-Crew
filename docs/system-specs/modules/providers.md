@@ -21,8 +21,18 @@ reaching a dormant inherited compatibility branch.
 The Codex backend runs one ACP adapter process per session. Desktop builds stage
 the pinned adapter under `codex_crew/_vendor/node_modules`; the Electron shell
 provides its executable as the Node runner. Source installs can use a project or
-global adapter installation. Codex account state remains owned by Codex and is
-switched through the account modal rather than copied into Codex Crew.
+global adapter installation. When the adapter is absent, one-click repair
+installs the pinned package into the app-owned data directory rather than
+requiring a global npm write.
+
+At spawn, Codex Crew discovers and validates an existing Codex CLI on Windows,
+macOS, and Linux, then passes its absolute path to the adapter. The dashboard
+reports whether the external or bundled runtime will be used. Its owner-only
+one-click action uses OpenAI's official non-interactive installer when the CLI
+is absent, verifies the installed binary, repairs the adapter when needed, and
+refreshes the running gateway's negative resolution cache. Codex account state
+remains owned by Codex and is switched through the account modal rather than
+copied into Codex Crew.
 
 Every Codex tool call is routed through the native PreToolUse gate assembled by
 `codex_tool_gate.py`. This preserves the repository security policy even when a

@@ -20,19 +20,21 @@ Two facts per row, from two owners that must not be conflated:
   application code, and ``scripts/check_agent_sdk_boundary.py`` is what keeps
   that true.
 
-Owner-only, and the snapshot is offloaded: the Claude probe shells out to mise
-and walks the filesystem, and resolving the governance ceiling loads config, so
-neither may run on the event loop.
+Owner-only, and the snapshot is offloaded: Codex discovery runs a bounded
+version probe and resolving the governance ceiling loads config, so neither may
+run on the event loop.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 from typing import Any, Dict, List
 
 from aiohttp import web
 
+from codex_crew.agent_sdk import CodexBootstrapError, bootstrap_codex
 from codex_crew.dashboard.handlers.kiro_prerequisite import _is_dashboard_owner
 from codex_crew.sel import sel
 
@@ -46,9 +48,25 @@ _CODE_OWNER_REQUIRED = "dashboard_owner_required"
 _OWNER_REQUIRED_MESSAGE = "dashboard owner required"
 
 _AUDIT_OPERATION = "acp_backend_status_access"
+_AUDIT_INSTALL_OPERATION = "codex_cli_install"
+_codex_install_lock = threading.Lock()
 
 
-async def _deny_non_owner(request: web.Request) -> web.Response | None:
+def _bootstrap_with_lock() -> Any:
+    """Run the installer while the worker, not the request, owns the lock."""
+
+    try:
+        return bootstrap_codex()
+    finally:
+        # A disconnected/cancelled HTTP request does not stop ``to_thread``.
+        # Releasing here prevents another click from racing the still-running
+        # installer after the request coroutine has already gone away.
+        _codex_install_lock.release()
+
+
+async def _deny_non_owner(
+    request: web.Request, *, operation: str = _AUDIT_OPERATION
+) -> web.Response | None:
     """Refuse a non-owner, mirroring the prerequisite handlers' 403 shape.
 
     Which components are installed on the host is host-configuration state and
@@ -64,7 +82,7 @@ async def _deny_non_owner(request: web.Request) -> web.Response | None:
     def _audit() -> None:
         sel().log_api_access(
             caller=audit_caller,
-            operation=_AUDIT_OPERATION,
+            operation=operation,
             outcome="denied",
             source="dashboard",
             resources=request.path,
@@ -117,6 +135,9 @@ def _snapshot() -> List[Dict[str, Any]]:
                 "restart_required": (
                     bool(state.restart_required) if state.installed == INSTALLED else False
                 ),
+                "codex_cli_source": state.codex_cli_source,
+                "codex_cli_version": state.codex_cli_version,
+                "one_click_install": bool(state.one_click_install),
             }
         )
     return rows
@@ -129,3 +150,58 @@ async def api_acp_backend_status(request: web.Request) -> web.Response:
         return denial
     backends = await asyncio.to_thread(_snapshot)
     return web.json_response({"backends": backends})
+
+
+async def api_codex_install(request: web.Request) -> web.Response:
+    """POST /api/acp-backends/codex/install -- install and attach Codex."""
+
+    denial = await _deny_non_owner(request, operation=_AUDIT_INSTALL_OPERATION)
+    if denial is not None:
+        return denial
+    if not _codex_install_lock.acquire(blocking=False):
+        return web.json_response(
+            {"error": "Codex installation is already running", "code": "codex_install_in_progress"},
+            status=409,
+        )
+
+    try:
+        result = await asyncio.to_thread(_bootstrap_with_lock)
+    except CodexBootstrapError as exc:
+        logger.warning("Codex one-click bootstrap failed: %s", exc.code)
+        return web.json_response(
+            {"error": str(exc), "code": exc.code},
+            status=503,
+        )
+    except Exception:
+        logger.exception("Codex one-click bootstrap failed unexpectedly")
+        return web.json_response(
+            {
+                "error": "Codex installation failed. Check the gateway log and try again.",
+                "code": "codex_install_failed",
+            },
+            status=500,
+        )
+
+    try:
+        await asyncio.to_thread(
+            sel().log_api_access,
+            caller=str(request.get("user") or "dashboard"),
+            operation=_AUDIT_INSTALL_OPERATION,
+            outcome="ok",
+            source="dashboard",
+            resources="codex",
+        )
+    except Exception:
+        logger.debug("Could not audit successful Codex installation", exc_info=True)
+
+    return web.json_response(
+        {
+            "ok": result.ok,
+            "codex_cli": {
+                "version": result.codex_cli.version,
+                "source": result.codex_cli.source,
+            },
+            "adapter_ready": result.adapter_ready,
+            "backends": await asyncio.to_thread(_snapshot),
+        }
+    )

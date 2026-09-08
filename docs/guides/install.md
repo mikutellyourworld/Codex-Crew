@@ -37,6 +37,20 @@ codex login
 The packaged Windows installer carries Python, the dashboard, and the pinned
 Codex ACP adapter. See [Windows install](windows-install.md).
 
+## Connect Codex in one click
+
+Open Settings, choose Developer, then select **Agent Backend**. Codex Crew first
+looks for a working Codex CLI installation in the normal Windows, macOS, Linux,
+npm, Homebrew, and user-bin locations. It validates the executable and connects
+the ACP adapter to it automatically; an explicit `CODEX_PATH` remains in control.
+
+If no external CLI is found, choose **Install and connect Codex**. This owner-only
+action downloads OpenAI's official installer to a temporary file, runs its
+non-interactive mode, verifies the resulting `codex-cli` version, and makes it
+available to new Codex sessions without asking an AI to perform the setup. The
+adapter's bundled runtime remains available until the external CLI is installed.
+Codex sign-in is still completed in Codex's own account flow.
+
 ## OpenAI-compatible and FreeChain profiles
 
 Open Settings, choose Providers, and add a profile with:

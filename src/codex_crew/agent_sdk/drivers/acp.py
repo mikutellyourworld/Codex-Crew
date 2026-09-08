@@ -13,17 +13,18 @@ mise, and an augmented PATH that includes shims a bare ``shutil.which`` cannot
 see. A second search would tell the operator they are ready and then fail the
 session, which is a worse outcome than saying nothing.
 
-Every function returns plain data -- a bool, a string, a tuple of bools -- so no
-ACP type crosses the boundary. Two consequences are deliberate rather than
+Every function returns plain data -- a bool, a string, or a tuple -- so no ACP
+type crosses the boundary. Two consequences are deliberate rather than
 incidental:
 
 * **A resolver that raises is left to raise.** The failed-CHECK verdict belongs
   to the caller's three-state contract, and swallowing the exception here would
   hand it a ``False`` indistinguishable from an honest "absent" -- which is
   exactly the collapse of ``unknown`` into ``missing`` that contract forbids.
-* **The paths themselves are dropped.** Nothing above needs the resolved
-  location, and a returned path is a filesystem detail the SDK would then be
-  tempted to interpret.
+* **Paths cross only for the explicit Codex bootstrap contract.** The normal
+  readiness probes still drop resolved locations. Codex discovery returns a
+  plain tuple because the spawn must pass that exact validated executable to
+  the adapter rather than repeat a different search.
 
 Imports that pull runtime machinery (``codex_crew.acp`` and
 ``codex_crew.sandbox``) are FUNCTION-LOCAL throughout. The ACP package pulls in
@@ -37,15 +38,35 @@ sandbox posture at their defining modules.
 from __future__ import annotations
 
 __all__ = [
+    "clear_codex_resolution_caches",
     "claude_adapter_cached_negative",
     "claude_adapter_install_command",
     "claude_components_resolve",
+    "codex_adapter_cached_negative",
+    "codex_adapter_install_command",
+    "codex_adapter_resolves",
+    "codex_cli_installation",
     "derived_agent_permissions",
     "kiro_cli_resolves",
     "kimi_cli_resolves",
     "resolve_pin_spelling",
     "run_kiro_native_commands",
 ]
+
+
+def codex_cli_installation() -> tuple[str, str, str] | None:
+    """Return ``(path, version, source)`` for a validated Codex CLI, if any."""
+    from codex_crew.codex_cli import find_codex_cli
+
+    found = find_codex_cli()
+    return (found.path, found.version, found.source) if found is not None else None
+
+
+def clear_codex_resolution_caches() -> None:
+    """Make a just-installed adapter visible to the next Codex spawn."""
+    from codex_crew.acp import client as _client
+
+    _client._codex_acp_argv_cache = _client._UNRESOLVED
 
 
 def resolve_pin_spelling(model_id: str, advertised: object) -> str:
@@ -167,10 +188,9 @@ def claude_adapter_cached_negative() -> bool:
 def codex_adapter_resolves() -> bool:
     """Whether the codex-acp adapter resolves to a runnable argv.
 
-    ONE component, unlike claude's two: codex-acp ships a compatible Codex binary
-    as an npm dependency and reads ``CODEX_PATH`` itself only to run a DIFFERENT
-    one, so there is no second executable Crew hands it and no half-install to
-    distinguish.
+    The adapter remains the required transport. It ships a compatible Codex
+    fallback, while Crew may separately discover and hand it an external CLI
+    through ``CODEX_PATH``.
     """
     from codex_crew.acp.client import _resolve_codex_acp_bin
 
@@ -182,10 +202,10 @@ def codex_adapter_cached_negative() -> bool:
     """Has the RUNNING gateway already resolved the codex adapter as absent?
 
     Same hazard and same resolution as :func:`claude_adapter_cached_negative`: the
-    argv is resolved once per process behind an ``_UNRESOLVED`` sentinel and never
-    invalidated, so a fresh probe reporting "installed" after an install would
-    disagree with every spawn until a restart. Consulted, never invalidated -- a
-    dashboard GET must not mutate a global on the spawn path.
+    argv is resolved once per process behind an ``_UNRESOLVED`` sentinel. A
+    dashboard GET only consults it and never mutates the spawn path; the explicit
+    owner-triggered bootstrap is the sole path that invalidates it after a
+    verified install.
     """
     from codex_crew.acp import client as _client
 

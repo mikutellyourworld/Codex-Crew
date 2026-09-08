@@ -104,10 +104,10 @@ What a harness needs, using the Codex adapter as the shape:
   path onto it. Generalizing that helper is allowed; it is harness-neutral and
   belongs to no harness. Adding a branch to the Kiro path is not (H13).
 
-Constants an adapter reads *itself* from the ambient environment do not get a
-constant here. Naming one implies a forwarding that does not exist — the Codex
-seam documents exactly this asymmetry against its Claude counterpart, which *is*
-explicitly forwarded.
+An adapter-specific environment variable is named only when Crew owns its
+wiring. Codex Crew discovers a validated machine CLI and sets `CODEX_PATH` for
+the Codex child when the operator did not already set it. The explicit value
+always wins; other harness branches never receive the discovered path.
 
 ## Stage 4 — the handshake, as your own literal
 
@@ -203,9 +203,9 @@ The Codex onboarding is a clean instance of stopping at Stage 6:
 |---|---|
 | 1 vocabulary | Done — `ACP_BACKEND_CODEX`, in `ACP_BACKENDS_KNOWN`, `PROVIDER_LABEL_CODEX`, policy name mapped. |
 | 2 capability sets | Decided for every set: in the model and effort channels, out of the rest. All three channel sets were *created* by this work, which is why the tuning channels are three sets rather than one. |
-| 3 spawn path | Done — adapter, npm package, dep marker, env override, project-local resolution. |
+| 3 spawn path | Done — adapter, npm package, dep marker, app-owned and project-local resolution, plus validated cross-platform Codex CLI discovery forwarded as `CODEX_PATH` unless explicitly overridden. |
 | 4 handshake | Done — `PROTOCOL_VERSION_CODEX`, its own literal at the same number as Claude's. |
-| 5 install probe | Done — `_probe_codex` names `codex-acp` and the command that installs it. One component, not two: the adapter ships its own Codex binary. Credentials are deliberately NOT probed: a `missing` verdict disables the switch, and the checkable paths are not the only ones that authenticate a Codex, so the two-branch remedy (its own sign-in, or a `model_provider` in `~/.codex/config.toml`) is stated in the panel as a standing caveat instead. |
+| 5 install probe | Done — `_probe_codex` distinguishes an external CLI from the adapter's bundled fallback. The owner-only one-click action downloads OpenAI's platform installer to a temporary file, runs it non-interactively without shell interpolation, verifies `codex --version`, installs a missing pinned adapter under the app data home, and clears only Codex resolution caches. Credentials are deliberately NOT probed because Codex supports more than one authentication path. |
 | 6 selectability | Selectable. `NOT_SHIPPED_SELECTABLE` is empty again, which is the healthy state. |
 | routing | Done — `SESSION_CONFIG`, verified and applied as `mode=read-only` after session/new and before the first prompt, refusing otherwise. |
 | native tool gate | Done. The spawn merges a Codex Crew command hook into `CODEX_CONFIG`, enables Codex hooks, and runs every native `PreToolUse` event through `codex_tool_gate.py` before execution. A malformed event or hook error denies the tool. An allowed event falls through to Codex's own approval and sandbox policy. |

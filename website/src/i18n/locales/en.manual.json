@@ -5672,6 +5672,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "Using the bundled Codex runtime.",
+        "codex_runtime_external": "Using Codex CLI {{version}} from this machine.",
+        "codex_runtime_missing": "Codex CLI is not installed on this machine.",
+        "could_not_install_codex_cli": "Could not install Codex CLI. Check the gateway log and try again.",
+        "install_and_connect_codex": "Install and connect Codex",
         "codex_signs_in_separately": "Codex signs in on its own: finish its sign-in, or name a model provider in ~/.codex/config.toml (CODEX_HOME moves that folder). Neither is checked here — the adapter reads them, not {{productName}}."
       },
       "featurePreviewsTab": {

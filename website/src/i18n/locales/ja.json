@@ -10021,6 +10021,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "同梱の Codex ランタイムを使用しています。",
+        "codex_runtime_external": "このマシンの Codex CLI {{version}} を使用しています。",
+        "codex_runtime_missing": "このマシンには Codex CLI がインストールされていません。",
+        "could_not_install_codex_cli": "Codex CLI をインストールできませんでした。gateway のログを確認して、もう一度お試しください。",
+        "install_and_connect_codex": "Codex をインストールして接続",
         "agent_backend": "エージェントバックエンド",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code は通常、実行前に承認を求め、{{productName}} がその要求を審査します。しかし Claude 自身の設定（プロジェクト内の .claude/settings.json を含む）で事前承認されたツールは要求を出さないため、拒否ルールと監査ログはその呼び出しを認識しません。",

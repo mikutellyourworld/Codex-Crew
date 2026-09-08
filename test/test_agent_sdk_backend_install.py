@@ -22,6 +22,7 @@ def _clear_probe_cache() -> None:
 
 
 def test_codex_probe_names_the_adapter_and_real_install_command(monkeypatch) -> None:
+    monkeypatch.setattr(probe.acp_driver, "codex_cli_installation", lambda: None)
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_resolves", lambda: False)
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_cached_negative", lambda: False)
     monkeypatch.setattr(
@@ -38,6 +39,11 @@ def test_codex_probe_names_the_adapter_and_real_install_command(monkeypatch) -> 
 
 
 def test_codex_probe_reports_a_resolved_adapter(monkeypatch) -> None:
+    monkeypatch.setattr(
+        probe.acp_driver,
+        "codex_cli_installation",
+        lambda: ("/opt/codex", "1.2.3", "path"),
+    )
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_resolves", lambda: True)
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_cached_negative", lambda: False)
 
@@ -46,6 +52,9 @@ def test_codex_probe_reports_a_resolved_adapter(monkeypatch) -> None:
     assert state.installed == probe.INSTALLED
     assert state.missing_components == ()
     assert state.install_command == ""
+    assert state.codex_cli_source == probe.CODEX_CLI_EXTERNAL
+    assert state.codex_cli_version == "1.2.3"
+    assert state.one_click_install is False
 
 
 def test_openai_compatible_adapter_is_bundled() -> None:
@@ -64,6 +73,7 @@ def test_removed_backend_has_no_remediation() -> None:
 
 
 def test_probe_rows_cover_only_the_public_registry(monkeypatch) -> None:
+    monkeypatch.setattr(probe.acp_driver, "codex_cli_installation", lambda: None)
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_resolves", lambda: True)
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_cached_negative", lambda: False)
 
@@ -99,11 +109,12 @@ def test_status_endpoint_refuses_non_owner_before_probing(monkeypatch) -> None:
 
 
 def test_status_endpoint_returns_codex_and_openai_compatible(monkeypatch) -> None:
-    from codex_crew.dashboard.handlers import acp_backend_status as handler
     import codex_crew.dashboard.handlers.core as core
+    from codex_crew.dashboard.handlers import acp_backend_status as handler
 
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_resolves", lambda: True)
     monkeypatch.setattr(probe.acp_driver, "codex_adapter_cached_negative", lambda: False)
+    monkeypatch.setattr(probe.acp_driver, "codex_cli_installation", lambda: None)
     monkeypatch.setattr(
         core,
         "_selectable_acp_backends",

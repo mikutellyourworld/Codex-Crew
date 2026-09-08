@@ -145,11 +145,12 @@ from codex_crew.acp.types import (
 from codex_crew.agent import ensure_agent_materialized
 from codex_crew.atomic_write import atomic_write
 from codex_crew.browser_cli.launch import browser_session_env, browser_socket_env
+from codex_crew.codex_cli import find_codex_cli
 from codex_crew.config.paths import kiro_sessions_dir
 from codex_crew.constants import (
-    COMPACT_WAIT_TIMEOUT_SECS,
     CODEXCREW_SPAWNED_ENV,
     CODEXCREW_SPAWNED_VALUE,
+    COMPACT_WAIT_TIMEOUT_SECS,
 )
 from codex_crew.env import (
     augmented_path,
@@ -262,11 +263,9 @@ _ENV_CODEXCREW_NODE_EXECUTABLE = "CODEXCREW_NODE_EXECUTABLE"
 KIMI_CLI_BIN = "kimi"
 KIMI_CLI_SUBCMD = "acp"
 _ENV_KIMI_CLI_BIN = "KIMI_CLI_BIN"
-# No CODEX_PATH constant: the adapter ships a compatible Codex binary as an npm
-# dependency and reads CODEX_PATH itself only to run a DIFFERENT one. An operator
-# who sets it reaches the child through the ambient environment copy, so naming it
-# here would imply a wiring that does not exist (its claude counterpart,
-# CLAUDE_CODE_EXECUTABLE, IS explicitly forwarded — the asymmetry is deliberate).
+# codex-acp ships a compatible fallback binary, but also accepts CODEX_PATH.
+# The Codex branch discovers a real machine install and forwards its validated
+# absolute path when the operator did not already provide an explicit override.
 
 # High-frequency, content-free adapter stderr diagnostics that _drain_stderr()
 # drops instead of forwarding as per-line WARNINGs.  The driving case is the
@@ -554,6 +553,12 @@ def _vendored_acp_roots(pkg_dir: Path | None = None) -> list[Path]:
     proj = os.environ.get("CODEXCREW_PROJECT_DIR", "")
     if proj:
         roots.append(Path(proj) / "node_modules")
+
+    # 3. One-click source-install repair. This is user-owned and app-scoped,
+    # unlike a global npm install, and is resolved by the same adapter ladder.
+    from codex_crew.config.paths import config_dir
+
+    roots.append(config_dir() / "tools" / "codex-acp" / "node_modules")
 
     return roots
 
@@ -4373,6 +4378,7 @@ class AcpClient:
         adapter_hidden_dirs: tuple[str, ...] = ()
         codex_config_json: str | None = None
         codex_uses_electron_node = False
+        codex_cli_path: str | None = None
 
         if self._is_claude:
             # Fold the requested model onto the exact spelling claude-agent-acp
@@ -4432,10 +4438,9 @@ class AcpClient:
             argv: list[str] = claude_argv
         elif self._is_codex:
             # codex-acp takes no argv of its own: the adapter is spawned bare and
-            # driven entirely over the pipe,
-            # so unlike the kiro branch there is nothing to append. CODEX_PATH is
-            # left exactly as the operator set it (the adapter ships its own Codex
-            # binary; overriding it is an explicit choice, never a default).
+            # driven entirely over the pipe, so unlike the kiro branch there is
+            # nothing to append. A validated machine Codex is discovered below;
+            # the child environment receives it only when CODEX_PATH is unset.
             global _codex_acp_argv_cache  # noqa: PLW0603
             if _codex_acp_argv_cache is _UNRESOLVED:
                 _codex_acp_argv_cache = await asyncio.to_thread(_resolve_codex_acp_bin)
@@ -4454,6 +4459,9 @@ class AcpClient:
                     f"The 'codex' CLI alone does not serve ACP."
                 )
             argv = codex_argv
+            codex_cli = await asyncio.to_thread(find_codex_cli)
+            if codex_cli is not None:
+                codex_cli_path = codex_cli.path
             packaged_node = os.environ.get(_ENV_CODEXCREW_NODE_EXECUTABLE)
             codex_uses_electron_node = bool(
                 packaged_node and Path(argv[0]).resolve() == Path(packaged_node).resolve()
@@ -4585,6 +4593,8 @@ class AcpClient:
             env["CODEX_CONFIG"] = codex_config_json
         if codex_uses_electron_node:
             env["ELECTRON_RUN_AS_NODE"] = "1"
+        if self._is_codex and codex_cli_path and not env.get("CODEX_PATH"):
+            env["CODEX_PATH"] = codex_cli_path
         env["PATH"] = augmented_path(env.get("PATH", ""))
         if self._is_claude and not env.get("CLAUDE_CODE_EXECUTABLE"):
             # The adapter's SDK needs a

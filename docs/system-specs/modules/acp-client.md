@@ -20,7 +20,8 @@ not installed, probed, or presented in the dashboard.
 1. `CODEX_ACP_BIN`, when it names an existing adapter script or executable.
 2. The package-local `_vendor/node_modules` tree.
 3. `CODEXCREW_PROJECT_DIR/node_modules` for a source checkout.
-4. Managed Node installations and the augmented process path.
+4. The app-owned `tools/codex-acp/node_modules` tree created by one-click setup.
+5. Managed Node installations and the augmented process path.
 
 A vendored tree is accepted only when both the adapter entry point and its ACP
 SDK dependency are present. Desktop packaging pins the adapter version and
@@ -29,9 +30,18 @@ The Electron gateway sets `CODEXCREW_NODE_EXECUTABLE` to the desktop executable.
 When that runner is selected, the client adds `ELECTRON_RUN_AS_NODE=1` only to
 the adapter child environment.
 
+Before a Codex spawn, `codex_cli.find_codex_cli()` searches a bounded set of
+platform-native locations plus the augmented path. It validates every candidate
+with a fixed `--version` invocation and accepts only `codex-cli` output. On
+Windows this includes OpenAI's versioned per-user install tree and npm shim; on
+macOS and Linux it includes the user bin, npm, Homebrew, and system-local paths.
+The validated absolute path is sent to `codex-acp` as `CODEX_PATH`. An explicit
+operator-supplied `CODEX_PATH` always wins.
+
 The adapter uses Codex account storage. Codex Crew never copies the account
 token into its configuration. The account modal lists and activates accounts
-through Codex's own runtime surface.
+through Codex's own runtime surface. If no external CLI is found, the adapter's
+bundled runtime remains the non-destructive fallback.
 
 ## OpenAI-compatible adapter
 

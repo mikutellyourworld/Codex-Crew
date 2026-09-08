@@ -12,7 +12,10 @@ from __future__ import annotations
 from aiohttp import web
 
 from codex_crew.dashboard import handlers
-from codex_crew.dashboard.handlers.acp_backend_status import api_acp_backend_status
+from codex_crew.dashboard.handlers.acp_backend_status import (
+    api_acp_backend_status,
+    api_codex_install,
+)
 from codex_crew.dashboard.handlers.mcp_custom import (
     api_mcp_custom_add,
     api_mcp_custom_get,
@@ -38,6 +41,7 @@ def register(app: web.Application) -> None:
     # the schema says which options this build/policy allows, this says which of
     # them would actually start.
     app.router.add_get("/api/acp-backends", api_acp_backend_status)
+    app.router.add_post("/api/acp-backends/codex/install", api_codex_install)
     app.router.add_get("/api/config/codexcrew", handlers.api_codexcrew_config)
     app.router.add_put("/api/config/codexcrew", handlers.api_codexcrew_config)
     app.router.add_patch("/api/config/codexcrew", handlers.api_codexcrew_config_patch)

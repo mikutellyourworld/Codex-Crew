@@ -10168,6 +10168,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "शामिल Codex रनटाइम का उपयोग हो रहा है।",
+        "codex_runtime_external": "इस कंप्यूटर के Codex CLI {{version}} का उपयोग हो रहा है।",
+        "codex_runtime_missing": "इस कंप्यूटर पर Codex CLI इंस्टॉल नहीं है।",
+        "could_not_install_codex_cli": "Codex CLI इंस्टॉल नहीं किया जा सका। gateway लॉग जाँचें और फिर प्रयास करें।",
+        "install_and_connect_codex": "Codex इंस्टॉल और कनेक्ट करें",
         "agent_backend": "एजेंट बैकएंड",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code आमतौर पर कार्य करने से पहले अनुमति मांगता है, और {{productName}} उस अनुरोध की जांच करता है। लेकिन Claude की अपनी सेटिंग्स में पहले से स्वीकृत टूल — जिसमें प्रोजेक्ट के अंदर की .claude/settings.json भी शामिल है — कुछ नहीं पूछता, इसलिए अस्वीकृति नियम और ऑडिट लॉग उस कॉल को नहीं देखते।",

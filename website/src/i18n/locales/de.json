@@ -10168,6 +10168,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "Die gebündelte Codex-Laufzeit wird verwendet.",
+        "codex_runtime_external": "Codex CLI {{version}} von diesem Rechner wird verwendet.",
+        "codex_runtime_missing": "Codex CLI ist auf diesem Rechner nicht installiert.",
+        "could_not_install_codex_cli": "Codex CLI konnte nicht installiert werden. Prüfe das Gateway-Protokoll und versuche es erneut.",
+        "install_and_connect_codex": "Codex installieren und verbinden",
         "agent_backend": "Agent-Backend",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code fragt normalerweise nach, bevor es handelt, und {{productName}} prüft diese Anfrage. Ein in Claudes eigenen Einstellungen vorab genehmigtes Tool — auch über eine .claude/settings.json im Projekt — fragt jedoch nicht, sodass die Ablehnungsregeln und das Audit-Log diesen Aufruf nicht sehen.",

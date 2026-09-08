@@ -10021,6 +10021,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "正在使用随附的 Codex 运行时。",
+        "codex_runtime_external": "正在使用此计算机上的 Codex CLI {{version}}。",
+        "codex_runtime_missing": "此计算机上未安装 Codex CLI。",
+        "could_not_install_codex_cli": "无法安装 Codex CLI。请检查 gateway 日志后重试。",
+        "install_and_connect_codex": "安装并连接 Codex",
         "agent_backend": "代理后端",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code 通常会先请求批准，{{productName}} 会对该请求做把关。但如果某个工具已在 Claude 自身设置里预先批准（包括项目内那份 .claude/settings.json），它就不会再请求，因此拒绝规则和审计日志看不到这次调用。",

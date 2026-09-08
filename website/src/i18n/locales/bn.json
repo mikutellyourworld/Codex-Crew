@@ -10168,6 +10168,11 @@
     },
     "developer": {
       "agentBackendTab": {
+        "codex_runtime_bundled": "অন্তর্ভুক্ত Codex রানটাইম ব্যবহার করা হচ্ছে।",
+        "codex_runtime_external": "এই কম্পিউটারের Codex CLI {{version}} ব্যবহার করা হচ্ছে।",
+        "codex_runtime_missing": "এই কম্পিউটারে Codex CLI ইনস্টল করা নেই।",
+        "could_not_install_codex_cli": "Codex CLI ইনস্টল করা যায়নি। gateway লগ পরীক্ষা করে আবার চেষ্টা করুন।",
+        "install_and_connect_codex": "Codex ইনস্টল ও সংযুক্ত করুন",
         "agent_backend": "এজেন্ট ব্যাকএন্ড",
         "claude_code": "Claude Code",
         "claude_uses_its_own_permissions": "Claude Code সাধারণত কাজ করার আগে অনুমতি চায়, এবং {{productName}} সেই অনুরোধ যাচাই করে। কিন্তু Claude-এর নিজের সেটিংসে আগেই অনুমোদিত টুল — প্রকল্পের ভিতরের .claude/settings.json সহ — কিছু জিজ্ঞাসা করে না, তাই অস্বীকৃতির নিয়ম ও অডিট লগ সেই কলটি দেখতে পায় না।",

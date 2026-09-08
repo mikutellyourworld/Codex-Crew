@@ -152,6 +152,15 @@ class TestVendoredClaudeAcp:
         roots = _vendored_acp_roots()
         assert roots[0].name == "node_modules" and roots[0].parent.name == "_vendor"
 
+    def test_roots_include_one_click_adapter_directory(self, tmp_path, monkeypatch):
+        from codex_crew.config import paths
+
+        monkeypatch.setattr(paths, "config_dir", lambda: tmp_path / "crew-home")
+
+        roots = _vendored_acp_roots(pkg_dir=tmp_path / "package" / "codex_crew")
+
+        assert tmp_path / "crew-home" / "tools" / "codex-acp" / "node_modules" in roots
+
 
 class TestAcpClientInit:
     def test_defaults(self):
@@ -1048,8 +1057,21 @@ class TestAcpClientBackendSelection:
 
         await _stop_stderr_drain(client)
 
+    @pytest.mark.parametrize(
+        ("configured_codex_path", "expected_codex_path"),
+        [
+            (None, "C:/Users/test/AppData/Local/OpenAI/Codex/codex.exe"),
+            ("C:/operator/codex.exe", "C:/operator/codex.exe"),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_spawn_codex_installs_native_tool_gate(self, tmp_path, monkeypatch):
+    async def test_spawn_codex_installs_native_tool_gate(
+        self,
+        tmp_path,
+        monkeypatch,
+        configured_codex_path,
+        expected_codex_path,
+    ):
         client = AcpClient(
             work_dir=tmp_path,
             acp_backend=ACP_BACKEND_CODEX,
@@ -1059,10 +1081,19 @@ class TestAcpClientBackendSelection:
             "CODEX_CONFIG", json.dumps({"model": "gpt-test", "features": {"shell": True}})
         )
         monkeypatch.setenv("CODEXCREW_NODE_EXECUTABLE", "C:/app/codexcrew-desktop.exe")
+        if configured_codex_path:
+            monkeypatch.setenv("CODEX_PATH", configured_codex_path)
+        else:
+            monkeypatch.delenv("CODEX_PATH", raising=False)
         with (
             patch(
                 "codex_crew.acp.client._resolve_codex_acp_bin",
                 return_value=(["C:/app/codexcrew-desktop.exe", "C:/npm/codex-acp.js"], ""),
+            ),
+            patch(
+                "codex_crew.acp.client.find_codex_cli",
+                return_value=MagicMock(path="C:/Users/test/AppData/Local/OpenAI/Codex/codex.exe"),
+                create=True,
             ),
             patch(
                 "codex_crew.acp.client.wrap_argv",
@@ -1088,6 +1119,7 @@ class TestAcpClientBackendSelection:
             gate_command = merged["hooks"]["PreToolUse"][-1]["hooks"][0]["command"]
             assert "codex_crew.codex_tool_gate" in gate_command
             assert env["ELECTRON_RUN_AS_NODE"] == "1"
+            assert env["CODEX_PATH"] == expected_codex_path
 
         await _stop_stderr_drain(client)
 
