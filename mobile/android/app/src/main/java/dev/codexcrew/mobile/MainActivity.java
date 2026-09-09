@@ -278,6 +278,25 @@ public class MainActivity extends Activity {
             }
         });
         web.setWebViewClient(new WebViewClient() {
+            @Override public boolean onRenderProcessGone(WebView view,
+                    android.webkit.RenderProcessGoneDetail detail) {
+                // A dead renderer cannot be reloaded. Detach and discard its view;
+                // return true so Android does not terminate this Activity too.
+                boolean current = view == web;
+                if (current) web = null;
+                if (view.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) view.getParent()).removeView(view);
+                }
+                view.destroy();
+                if (current && !isFinishing() && !isDestroyed()) {
+                    showConnection();
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle(R.string.renderer_stopped)
+                            .setMessage(R.string.renderer_recovery)
+                            .setPositiveButton(R.string.ok, null).show();
+                }
+                return true;
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String target = request.getUrl().toString();
                 debug("navigation same-origin=" + ConnectionAddress.sameOrigin(origin, target));

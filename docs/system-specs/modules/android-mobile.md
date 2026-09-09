@@ -5,6 +5,10 @@ existing browser dashboard. The gateway remains the source of UI assets,
 authorization, tools and session behavior. No gateway API or policy changes
 are needed. Native setup and error controls must fit narrow and foldable
 screens, respond to system/IME insets and preserve WebView during resizing.
+If Android terminates the WebView renderer, the Activity detaches and destroys
+the unusable view and returns to setup with an explanation. It acknowledges
+renderer termination to Android, preserves the saved origin, and requires a
+user retry rather than entering an automatic crash/relaunch loop.
 The native root applies system-bar, keyboard and cutout spacing once, then
 consumes those insets instead of forwarding them to WebView. This avoids double
 top/bottom spacing while keeping controls outside system UI and the keyboard.

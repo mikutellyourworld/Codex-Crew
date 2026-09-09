@@ -16,6 +16,8 @@
     <string name="settings_unavailable">Enable Developer options in Android Settings first.</string>
     <string name="invalid_address">Use an HTTPS dashboard address, or http://127.0.0.1:PORT for an ADB tunnel. Passwords and query strings are not saved.</string>
     <string name="load_failed">Cannot reach the dashboard. Check the host and network. For ADB, rerun the computer assistant to refresh the connection and tunnel.</string>
+    <string name="renderer_stopped">Dashboard display stopped</string>
+    <string name="renderer_recovery">Android stopped the dashboard display process. Your saved connection is still available. Tap Open dashboard to try again. For a connection that does not depend on wireless debugging, use your HTTPS dashboard address.</string>
     <string name="external_link">Open this link in your browser?</string>
     <string name="open">Open</string>
     <string name="cancel">Cancel</string>
