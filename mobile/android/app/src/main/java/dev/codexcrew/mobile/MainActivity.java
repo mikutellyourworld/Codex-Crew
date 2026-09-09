@@ -236,9 +236,6 @@ public class MainActivity extends Activity {
         FrameLayout dashboard = new FrameLayout(this);
         root.addView(dashboard, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         dashboard.addView(web, new FrameLayout.LayoutParams(-1, -1));
-        FloatingConnectionButton connection = new FloatingConnectionButton(
-                this, dashboard, getPreferences(MODE_PRIVATE), this::showConnection);
-        dashboard.addView(connection, new FrameLayout.LayoutParams(dp(48), dp(48)));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);

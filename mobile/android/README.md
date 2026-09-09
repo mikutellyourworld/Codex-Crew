@@ -80,7 +80,7 @@ native bridges are disabled. ADB launcher extras ask for confirmation before
 changing the dashboard. The connection screen retains the saved address and
 offers no forget/sign-out button; use dashboard session management for sign-out.
 An empty address prefills the standard local ADB URL. Android backups are off.
-The draggable Crew icon opens a native setup card styled in Crew's dark palette.
+Android Back returns to the Crew-themed native setup card after dashboard history is exhausted.
 
 ## Verification
 
