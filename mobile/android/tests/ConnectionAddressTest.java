@@ -23,6 +23,9 @@ public class ConnectionAddressTest {
         assert !ConnectionAddress.sameOrigin("https://crew.example/", "http://crew.example/");
         assert !ConnectionAddress.sameOrigin("https://crew.example/", "https://user@crew.example/");
         assert !ConnectionAddress.sameOrigin("https://crew.example/", "https://crew.example:444/");
+        assert !ConnectionAddress.sameOrigin("https://crew.example/", null);
+        assert !ConnectionAddress.sameOrigin(null, "https://crew.example/");
+        assert !ConnectionAddress.sameOrigin("https://crew.example/", "about:blank");
         System.out.println("Connection address security checks passed");
     }
 }

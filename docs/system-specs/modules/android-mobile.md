@@ -68,5 +68,9 @@ automatically. The display uses 127.0.0.1; navigation still normalizes localhost
 
 Build uses pinned Android Gradle plugin 9.4.0, SDK 36, minimum API 26, Java 17.
 Debug APKs are sideload artifacts. Release signing and app-store publication
-are separate from source publication. No device endpoint, pairing key,
+are separate from source publication. Both build types disable Android debugging,
+and WebView remote debugging is always off. File uploads require a current
+trusted page and a granted content URI; navigation cancels pending selection,
+and each picker request has its own result identifier to reject stale results.
+No device endpoint, pairing key,
 credential, SDK path, signing key or runtime state may enter source control.

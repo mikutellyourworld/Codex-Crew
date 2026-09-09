@@ -36,11 +36,11 @@ public class MainActivity extends Activity {
     private WebView web;
     private String origin;
     private ValueCallback<Uri[]> fileSelection;
+    private int fileRequest = 100;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        WebView.setWebContentsDebuggingEnabled(
-                (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+        WebView.setWebContentsDebuggingEnabled(false);
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
                     android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::navigateBack);
@@ -258,13 +258,18 @@ public class MainActivity extends Activity {
             }
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback,
                     FileChooserParams params) {
+                if (view != web || !ConnectionAddress.sameOrigin(origin, view.getUrl())) {
+                    callback.onReceiveValue(null);
+                    return true;
+                }
                 if (fileSelection != null) fileSelection.onReceiveValue(null);
                 fileSelection = callback;
                 Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 picker.addCategory(Intent.CATEGORY_OPENABLE);
                 picker.setType("*/*");
                 picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, params.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE);
-                try { startActivityForResult(picker, 1); }
+                fileRequest = fileRequest == 65535 ? 100 : fileRequest + 1;
+                try { startActivityForResult(picker, fileRequest); }
                 catch (android.content.ActivityNotFoundException ex) {
                     fileSelection.onReceiveValue(null);
                     fileSelection = null;
@@ -289,6 +294,10 @@ public class MainActivity extends Activity {
                 return true;
             }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) {
+                if (fileSelection != null) {
+                    fileSelection.onReceiveValue(null);
+                    fileSelection = null;
+                }
                 debug("page started");
                 error.setVisibility(View.GONE);
                 retry.setVisibility(View.GONE);
@@ -347,11 +356,17 @@ public class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
-        if (request == 1 && fileSelection != null) {
+        if (request == fileRequest && fileSelection != null) {
             Uri[] selected = WebChromeClient.FileChooserParams.parseResult(result, data);
+            if (web == null || !ConnectionAddress.sameOrigin(origin, web.getUrl())) selected = null;
             // Accept only the content URIs returned by Android's document picker.
             if (selected != null) for (Uri uri : selected) {
-                if (!"content".equals(uri.getScheme())) { selected = null; break; }
+                if (!"content".equals(uri.getScheme()) || checkUriPermission(uri,
+                        android.os.Process.myPid(), android.os.Process.myUid(),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    selected = null;
+                    break;
+                }
             }
             fileSelection.onReceiveValue(selected);
             fileSelection = null;

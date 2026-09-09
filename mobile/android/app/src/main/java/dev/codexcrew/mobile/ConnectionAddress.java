@@ -42,7 +42,7 @@ public final class ConnectionAddress {
             if (uri.getRawUserInfo() != null) return false;
             return origin.equals(parse(new URI(uri.getScheme(), null, uri.getHost(),
                     uri.getPort(), "/", null, null).toString()));
-        } catch (URISyntaxException | IllegalArgumentException ex) {
+        } catch (URISyntaxException | IllegalArgumentException | NullPointerException ex) {
             return false;
         }
     }

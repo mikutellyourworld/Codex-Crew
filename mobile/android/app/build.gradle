@@ -3,6 +3,11 @@ plugins { id 'com.android.application' }
 android {
     namespace 'dev.codexcrew.mobile'
     compileSdk 36
+    // Sideload builds handle real sessions too; do not expose app data to ADB.
+    buildTypes {
+        debug { debuggable false }
+        release { debuggable false }
+    }
     defaultConfig {
         applicationId 'dev.codexcrew.mobile'
         minSdk 26
