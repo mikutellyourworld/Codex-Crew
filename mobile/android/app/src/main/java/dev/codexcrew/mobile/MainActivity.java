@@ -14,7 +14,6 @@ import android.webkit.CookieManager;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
-import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
@@ -26,6 +25,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ProgressBar;
 import android.widget.FrameLayout;
+import android.graphics.drawable.GradientDrawable;
+import android.content.res.ColorStateList;
+import android.graphics.Typeface;
+import android.widget.ImageView;
 
 /** The gateway owns the dashboard, login, authorization and responsive layout. */
 public class MainActivity extends Activity {
@@ -91,15 +94,36 @@ public class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(label);
         button.setAllCaps(false);
+        boolean primary = label == R.string.connect;
+        button.setTextColor(getColor(primary ? R.color.crew_bg : R.color.crew_text));
+        button.setTextSize(16);
+        button.setMinHeight(dp(52));
+        button.setPadding(dp(16), dp(12), dp(16), dp(12));
+        button.setBackgroundTintList(null);
+        button.setBackground(new android.graphics.drawable.RippleDrawable(
+                ColorStateList.valueOf(0x337f7fff),
+                surface(primary ? R.color.crew_accent : R.color.crew_panel, !primary), null));
         button.setOnClickListener(v -> action.run());
-        container.addView(button, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.topMargin = dp(14);
+        container.addView(button, params);
         return button;
+    }
+
+    private GradientDrawable surface(int color, boolean border) {
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(getColor(color));
+        background.setCornerRadius(dp(16));
+        if (border) background.setStroke(dp(1), getColor(R.color.crew_border));
+        return background;
     }
 
     private void paragraph(LinearLayout container, int text, int size) {
         TextView view = new TextView(this);
         view.setText(text);
         view.setTextSize(size);
+        view.setTextColor(getColor(size >= 24 ? R.color.crew_text : R.color.crew_muted));
+        if (size >= 24) view.setTypeface(null, Typeface.BOLD);
         view.setPadding(0, dp(12), 0, dp(12));
         container.addView(view, new LinearLayout.LayoutParams(-1, -2));
     }
@@ -108,34 +132,48 @@ public class MainActivity extends Activity {
         frame();
         ScrollView scroll = new ScrollView(this);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, -1));
+        FrameLayout canvas = new FrameLayout(this);
+        canvas.setPadding(dp(20), dp(32), dp(20), dp(32));
+        scroll.addView(canvas);
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(16), dp(20), dp(20));
-        scroll.addView(content);
+        content.setPadding(dp(24), dp(24), dp(24), dp(28));
+        content.setBackground(surface(R.color.crew_panel, true));
+        FrameLayout.LayoutParams card = new FrameLayout.LayoutParams(-1, -2, android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL);
+        canvas.addView(content, card);
+        canvas.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            int width = Math.min(dp(560), Math.max(0, r - l - dp(40)));
+            if (content.getLayoutParams().width != width) {
+                content.getLayoutParams().width = width;
+                content.requestLayout();
+            }
+        });
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.ic_launcher);
+        logo.setContentDescription(getString(R.string.app_name));
+        content.addView(logo, new LinearLayout.LayoutParams(dp(48), dp(48)));
         paragraph(content, R.string.connect_title, 26);
         paragraph(content, R.string.connect_help, 16);
+        paragraph(content, R.string.address_hint, 14);
         EditText address = new EditText(this);
         address.setHint(R.string.address_hint);
         address.setContentDescription(getString(R.string.address_hint));
         address.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        address.setText(origin);
+        address.setText(origin.isEmpty() ? "http://127.0.0.1:5486/"
+                : origin.replace("http://localhost:", "http://127.0.0.1:"));
+        address.setTextSize(16);
+        address.setTextColor(getColor(R.color.crew_text));
+        address.setHintTextColor(getColor(R.color.crew_muted));
+        address.setTypeface(Typeface.MONOSPACE);
+        address.setPadding(dp(16), dp(16), dp(16), dp(16));
+        address.setBackgroundTintList(null);
+        address.setBackground(surface(R.color.crew_bg, true));
         content.addView(address, new LinearLayout.LayoutParams(-1, -2));
         button(content, R.string.connect, () -> {
             try { openDashboard(ConnectionAddress.parse(address.getText().toString())); }
             catch (IllegalArgumentException ex) { address.setError(getString(R.string.invalid_address)); }
         });
         button(content, R.string.pairing, this::pairingHelp);
-        button(content, R.string.forget, () -> {
-            origin = "";
-            getPreferences(MODE_PRIVATE).edit().clear().apply();
-            CookieManager.getInstance().removeAllCookies(ok -> CookieManager.getInstance().flush());
-            WebStorage.getInstance().deleteAllData();
-            WebView cleanup = new WebView(this);
-            cleanup.clearCache(true);
-            cleanup.clearHistory();
-            cleanup.destroy();
-            address.setText("");
-        });
     }
 
     private void propose(String value) {

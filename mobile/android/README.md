@@ -77,8 +77,10 @@ The app uses Android's trusted certificate store without TLS overrides.
 External HTTPS links require confirmation and open in the browser. File
 access, content access, mixed content, third-party cookies and JavaScript
 native bridges are disabled. ADB launcher extras ask for confirmation before
-changing the dashboard. **Forget connection and sign out** clears the local
-connection, WebView cookies, cache and site storage. Android backups are off.
+changing the dashboard. The connection screen retains the saved address and
+offers no forget/sign-out button; use dashboard session management for sign-out.
+An empty address prefills the standard local ADB URL. Android backups are off.
+The draggable Crew icon opens a native setup card styled in Crew's dark palette.
 
 ## Verification
 
@@ -91,7 +93,7 @@ gradle -p mobile/android --no-daemon assembleDebug lintDebug
 Device acceptance: install, open via USB and wireless ADB, complete dashboard
 login, send a chat message, fold/unfold, show the keyboard, rotate, disconnect,
 and reconnect after refreshing ports. Verify developer-settings help, external
-link confirmation and forgetting the connection. Do not publish screenshots
+link confirmation and saved-address persistence. Do not publish screenshots
 or logs containing device addresses, login links or private conversations.
 
 References: [Android ADB](https://developer.android.com/tools/adb),

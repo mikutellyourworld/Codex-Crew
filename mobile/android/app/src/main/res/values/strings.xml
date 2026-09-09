@@ -19,7 +19,6 @@
     <string name="external_link">Open this link in your browser?</string>
     <string name="open">Open</string>
     <string name="cancel">Cancel</string>
-    <string name="forget">Forget connection and sign out</string>
     <string name="new_connection">Use this dashboard?</string>
     <string name="ok">OK</string>
 </resources>

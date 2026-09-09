@@ -1,0 +1,13 @@
+<resources>
+    <style name="CrewTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/crew_bg</item>
+        <item name="android:colorBackground">@color/crew_bg</item>
+        <item name="android:colorAccent">@color/crew_accent</item>
+        <item name="android:textColorPrimary">@color/crew_text</item>
+        <item name="android:textColorSecondary">@color/crew_muted</item>
+        <item name="android:statusBarColor">@color/crew_bg</item>
+        <item name="android:navigationBarColor">@color/crew_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

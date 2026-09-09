@@ -6,11 +6,11 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.FrameLayout;
 
 /** A bounded, accessible tap target whose drag position survives screen resizing. */
-public final class FloatingConnectionButton extends Button {
+public final class FloatingConnectionButton extends ImageButton {
     private final SharedPreferences preferences;
     private final FrameLayout container;
     private final int slop;
@@ -25,15 +25,14 @@ public final class FloatingConnectionButton extends Button {
         slop = ViewConfiguration.get(context).getScaledTouchSlop();
         fractionX = preferences.getFloat("connection_x", 1f);
         fractionY = preferences.getFloat("connection_y", .25f);
-        setText("ADB");
-        setTextSize(12);
-        setAllCaps(false);
-        setPadding(0, 0, 0, 0);
-        setMinWidth(0);
-        setMinHeight(0);
+        setImageResource(R.drawable.ic_launcher);
+        setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        int inset = Math.round(8 * getResources().getDisplayMetrics().density);
+        setPadding(inset, inset, inset, inset);
+        setMinimumWidth(0);
+        setMinimumHeight(0);
         setContentDescription(context.getString(R.string.connection));
         setAlpha(.5f);
-        setTextColor(Color.WHITE);
         GradientDrawable background = new GradientDrawable();
         background.setColor(Color.rgb(35, 41, 57));
         background.setShape(GradientDrawable.OVAL);

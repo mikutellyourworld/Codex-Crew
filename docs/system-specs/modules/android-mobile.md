@@ -5,7 +5,7 @@ existing browser dashboard. The gateway remains the source of UI assets,
 authorization, tools and session behavior. No gateway API or policy changes
 are needed. Native setup and error controls must fit narrow and foldable
 screens, respond to system/IME insets and preserve WebView during resizing.
-Connection access is a 48dp floating ADB button at 50% opacity. Dragging moves
+Connection access is a 48dp floating Crew icon button at 50% opacity. Dragging moves
 it within the usable viewport and saves a normalized position; tapping opens
 setup. Resizing, folding and keyboard insets keep it on screen. The native
 client removes the Settings gear button border through a fixed presentation
@@ -44,7 +44,11 @@ navigation stays on the selected origin; gesture-initiated external HTTPS
 links require confirmation and use the system browser. Launcher connection
 extras also require confirmation. The selected origin has no credentials,
 query, fragment or subpath; it is stored only in Android private preferences.
-Backup is disabled; forgetting clears WebView login data and the origin.
+Backup is disabled. The connection screen has no forget/sign-out action;
+session management remains in the dashboard. Setup uses a dark navy Crew card,
+rounded fields and purple accents. The last address is shown as editable text;
+an empty saved address prefills the standard loopback ADB URL without connecting
+automatically. The display uses 127.0.0.1; navigation still normalizes localhost.
 
 Build uses pinned Android Gradle plugin 9.4.0, SDK 36, minimum API 26, Java 17.
 Debug APKs are sideload artifacts. Release signing and app-store publication
