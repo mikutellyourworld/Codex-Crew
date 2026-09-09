@@ -37,6 +37,10 @@ public class MainActivity extends Activity {
     private String origin;
     private ValueCallback<Uri[]> fileSelection;
     private int fileRequest = 100;
+    private final android.os.Handler healthHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final java.util.concurrent.ExecutorService healthWorker = java.util.concurrent.Executors.newSingleThreadExecutor();
+    private boolean resumed;
+    private int healthGeneration;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -46,6 +50,15 @@ public class MainActivity extends Activity {
                     android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::navigateBack);
         }
         origin = getPreferences(MODE_PRIVATE).getString("origin", "");
+        // Migrate the previous single address without replacing an existing slot.
+        if (!origin.isEmpty()) {
+            try {
+                String parsed = ConnectionAddress.parse(origin);
+                String key = parsed.startsWith("https://") ? "profile_https" : "profile_adb";
+                if (!getPreferences(MODE_PRIVATE).contains(key))
+                    getPreferences(MODE_PRIVATE).edit().putString(key, parsed).apply();
+            } catch (IllegalArgumentException ignored) { origin = ""; }
+        }
         showConnection();
         String proposed = getIntent().getStringExtra("dashboard_url");
         if (proposed != null) propose(proposed);
@@ -64,6 +77,7 @@ public class MainActivity extends Activity {
     }
 
     private void frame() {
+        stopHealthChecks();
         if (fileSelection != null) {
             fileSelection.onReceiveValue(null);
             fileSelection = null;
@@ -157,13 +171,26 @@ public class MainActivity extends Activity {
         content.addView(logo, new LinearLayout.LayoutParams(dp(48), dp(48)));
         paragraph(content, R.string.connect_title, 26);
         paragraph(content, R.string.connect_help, 16);
+        android.widget.Spinner profiles = new android.widget.Spinner(this);
+        profiles.setContentDescription(getString(R.string.saved_connections));
+        android.widget.ArrayAdapter<String> choices = new android.widget.ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item,
+                new String[] {getString(R.string.adb_profile), getString(R.string.https_profile)}) {
+            @Override public View getView(int position, View convertView, ViewGroup parent) {
+                TextView label = (TextView) super.getView(position, convertView, parent);
+                label.setTextColor(getColor(R.color.crew_text));
+                label.setTextSize(16);
+                return label;
+            }
+        };
+        choices.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        profiles.setAdapter(choices);
+        content.addView(profiles, new LinearLayout.LayoutParams(-1, dp(52)));
         paragraph(content, R.string.address_hint, 14);
         EditText address = new EditText(this);
         address.setHint(R.string.address_hint);
         address.setContentDescription(getString(R.string.address_hint));
         address.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        address.setText(origin.isEmpty() ? "http://127.0.0.1:5486/"
-                : origin.replace("http://localhost:", "http://127.0.0.1:"));
         address.setTextSize(16);
         address.setTextColor(getColor(R.color.crew_text));
         address.setHintTextColor(getColor(R.color.crew_muted));
@@ -172,11 +199,42 @@ public class MainActivity extends Activity {
         address.setBackgroundTintList(null);
         address.setBackground(surface(R.color.crew_bg, true));
         content.addView(address, new LinearLayout.LayoutParams(-1, -2));
+        // Keep unsaved edits when changing slots; only explicit save/open persists them.
+        String[] drafts = {getPreferences(MODE_PRIVATE).getString("profile_adb", "http://127.0.0.1:5486/"),
+                getPreferences(MODE_PRIVATE).getString("profile_https", "")};
+        int[] selected = {origin.startsWith("https://") ? 1 : 0};
+        address.setText(drafts[selected[0]]);
+        profiles.setSelection(selected[0]);
+        profiles.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                drafts[selected[0]] = address.getText().toString();
+                selected[0] = position;
+                address.setText(drafts[position]);
+                address.setError(null);
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
+        });
+        button(content, R.string.save_connection, () -> {
+            if (saveProfile(selected[0] == 1, address))
+                android.widget.Toast.makeText(this, R.string.connection_saved, android.widget.Toast.LENGTH_SHORT).show();
+        });
+        paragraph(content, R.string.failover_help, 14);
         button(content, R.string.connect, () -> {
-            try { openDashboard(ConnectionAddress.parse(address.getText().toString())); }
-            catch (IllegalArgumentException ex) { address.setError(getString(R.string.invalid_address)); }
+            if (saveProfile(selected[0] == 1, address)) openDashboard(address.getText().toString());
         });
         button(content, R.string.pairing, this::pairingHelp);
+    }
+
+    private boolean saveProfile(boolean https, EditText address) {
+        try {
+            String parsed = ConnectionProfiles.validate(https, address.getText().toString());
+            getPreferences(MODE_PRIVATE).edit().putString(https ? "profile_https" : "profile_adb", parsed).apply();
+            address.setText(parsed);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            address.setError(getString(https ? R.string.https_required : R.string.adb_required));
+            return false;
+        }
     }
 
     private void propose(String value) {
@@ -354,6 +412,68 @@ public class MainActivity extends Activity {
             }
         });
         web.loadUrl(origin);
+        startHealthChecks();
+    }
+
+    private void stopHealthChecks() {
+        healthGeneration++;
+        healthHandler.removeCallbacksAndMessages(null);
+    }
+
+    private void startHealthChecks() {
+        stopHealthChecks();
+        String target = ConnectionProfiles.fallback(origin,
+                getPreferences(MODE_PRIVATE).getString("profile_https", ""));
+        if (!resumed || web == null || target == null) return;
+        final int generation = healthGeneration;
+        final String probeOrigin = origin;
+        final ConnectionProfiles.Health health = new ConnectionProfiles.Health();
+        // Independent of the page: a cached dashboard can render while its tunnel is gone.
+        Runnable check = new Runnable() {
+            @Override public void run() {
+                if (generation != healthGeneration || !resumed || web == null) return;
+                healthWorker.execute(() -> {
+                    boolean reachable = false;
+                    java.net.HttpURLConnection connection = null;
+                    try {
+                        connection = (java.net.HttpURLConnection) new java.net.URL(probeOrigin + "api/instances").openConnection();
+                        connection.setConnectTimeout(3000);
+                        connection.setReadTimeout(3000);
+                        connection.setInstanceFollowRedirects(false);
+                        connection.setUseCaches(false);
+                        int status = connection.getResponseCode();
+                        // Authentication failures prove reachability, not a lost tunnel.
+                        reachable = status >= 200 && status < 500;
+                    } catch (java.io.IOException ignored) {
+                        // No addresses or credentials in logs; no TLS/security overrides.
+                    } finally {
+                        if (connection != null) connection.disconnect();
+                    }
+                    final boolean healthy = reachable;
+                    healthHandler.post(() -> {
+                        if (generation != healthGeneration || !resumed || web == null) return;
+                        if (health.record(healthy)) {
+                            openDashboard(target);
+                            android.widget.Toast.makeText(MainActivity.this, R.string.switched_https,
+                                    android.widget.Toast.LENGTH_LONG).show();
+                        } else healthHandler.postDelayed(this, 10000);
+                    });
+                });
+            }
+        };
+        healthHandler.post(check);
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        resumed = true;
+        startHealthChecks();
+    }
+
+    @Override protected void onPause() {
+        resumed = false;
+        stopHealthChecks();
+        super.onPause();
     }
 
     private void debug(String message) {
@@ -393,6 +513,8 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        stopHealthChecks();
+        healthWorker.shutdownNow();
         if (web != null) web.destroy();
         super.onDestroy();
     }

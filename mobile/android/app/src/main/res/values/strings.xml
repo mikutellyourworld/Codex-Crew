@@ -3,6 +3,15 @@
     <string name="connect_title">Your crew, on your phone</string>
     <string name="connect_help">Open your existing dashboard over HTTPS (including Tailscale), or use the local ADB connection prepared by the desktop assistant.</string>
     <string name="address_hint">Dashboard address</string>
+    <string name="saved_connections">Saved connections</string>
+    <string name="adb_profile">ADB · local tunnel</string>
+    <string name="https_profile">HTTPS · Wi-Fi / Tailscale</string>
+    <string name="save_connection">Save / overwrite selected address</string>
+    <string name="connection_saved">Address saved</string>
+    <string name="https_required">Enter an HTTPS dashboard address without a password, path, or sign-in token.</string>
+    <string name="adb_required">Enter http://127.0.0.1:PORT/ for the ADB tunnel.</string>
+    <string name="failover_help">Save both addresses to switch automatically from ADB to HTTPS if the local connection fails. Open dashboard also saves the selected address. Sign in to HTTPS once; it has its own session.</string>
+    <string name="switched_https">ADB unavailable. Switched to your saved HTTPS dashboard.</string>
     <string name="connect">Open dashboard</string>
     <string name="connection">Connection</string>
     <string name="retry">Retry</string>

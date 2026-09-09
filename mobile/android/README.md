@@ -84,6 +84,26 @@ Android Back returns to the Crew-themed native setup card after dashboard histor
 
 ## Verification
 
+The connection dropdown keeps separate ADB and HTTPS addresses. Select a slot,
+edit its address, and tap **Save / overwrite selected address**. **Open dashboard**
+also saves that slot. Existing saved addresses migrate without replacing a slot.
+Only credential-free root addresses are accepted; sign-in links are not saved.
+
+When both slots are saved, the foreground app checks the active ADB endpoint
+immediately and every ten seconds after a check finishes. Two consecutive network
+failures or server errors switch to the saved HTTPS address. Each check has
+three-second connect and read timeouts, follows no redirects, and sends no WebView
+cookies. Authentication responses count as reachable. Checks stop in the background;
+stale results after navigation are ignored. HTTPS never downgrades to HTTP and
+does not copy the ADB login session. Sign in on HTTPS separately. Unsaved messages
+may be lost when switching dashboards. This cannot repair an offline host shared
+by both connections.
+
+Device acceptance for profiles: overwrite each slot, restart the app, confirm both
+persist, open ADB, then remove its reverse tunnel and confirm a single HTTPS switch.
+Repeat with an empty HTTPS slot (no switch), a brief interruption (no switch after
+recovery), and background/resume. Verify HTTPS certificate errors remain blocked.
+
 For automatic tunnel recovery after desktop restarts, run
 `python -m codex_crew.mobile_recovery --connect IP:CONNECTION_PORT` under your
 service manager. Keep that endpoint in local service configuration, outside Git.
