@@ -5,6 +5,9 @@ existing browser dashboard. The gateway remains the source of UI assets,
 authorization, tools and session behavior. No gateway API or policy changes
 are needed. Native setup and error controls must fit narrow and foldable
 screens, respond to system/IME insets and preserve WebView during resizing.
+The native root applies system-bar, keyboard and cutout spacing once, then
+consumes those insets instead of forwarding them to WebView. This avoids double
+top/bottom spacing while keeping controls outside system UI and the keyboard.
 The dashboard has no floating connection control. Android Back returns to
 setup after dashboard navigation history is exhausted. The native
 client removes the Settings gear button border through a fixed presentation

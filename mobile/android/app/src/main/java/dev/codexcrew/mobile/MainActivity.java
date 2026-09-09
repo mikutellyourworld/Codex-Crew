@@ -75,17 +75,20 @@ public class MainActivity extends Activity {
         }
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setFitsSystemWindows(true);
+        // This container owns system spacing; do not apply it again in WebView.
+        root.setFitsSystemWindows(false);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             if (android.os.Build.VERSION.SDK_INT >= 30) {
                 android.graphics.Insets bars = insets.getInsets(
-                        WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.ime()
+                                | WindowInsets.Type.displayCutout());
                 v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                return WindowInsets.CONSUMED;
             } else {
                 v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
                         insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
             }
-            return insets;
+            return insets.consumeSystemWindowInsets().consumeStableInsets();
         });
         setContentView(root);
     }
