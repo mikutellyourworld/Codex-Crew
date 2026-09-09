@@ -98,7 +98,7 @@ export default function ErrorNotice({
       <span role="alert" className={`inline-flex items-center gap-1.5 text-[12px] text-danger ${className}`} data-testid={testId}>
         <AlertTriangle size={14} className="shrink-0" aria-hidden="true" />
         {title && <strong className="font-semibold">{title}</strong>}
-        <span className={`min-w-0 ${messageClassName}`} style={{ overflowWrap: 'anywhere' }}>{message}</span>
+        <span className={`min-w-0 overflow-hidden text-ellipsis ${messageClassName}`} title={message} style={{ overflowWrap: 'anywhere' }}>{message}</span>
         {askAgent && (
           <AskAgentButton
             report={report}

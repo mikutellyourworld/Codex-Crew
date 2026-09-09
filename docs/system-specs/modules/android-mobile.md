@@ -9,6 +9,10 @@ The dashboard has no floating connection control. Android Back returns to
 setup after dashboard navigation history is exhausted. The native
 client removes the Settings gear button border through a fixed presentation
 stylesheet on the selected dashboard origin, preserving keyboard focus styles.
+The native stylesheet also clips the compact instance error message within its
+allocated width so it cannot paint over the adjacent action. The shared web
+error component applies the same overflow protection and exposes full text in
+its title. This is presentation only; connection errors remain visible.
 
 `codexcrew-mobile` (`mobile.py`, `mobile_gui.py`) is an operator-run host CLI
 and optional desktop form. It uses Android SDK ADB with argument arrays,
@@ -21,8 +25,16 @@ require confirmation. Multiple phones require explicit selection.
 
 The assistant refreshes mDNS after pairing and on demand. Pairing, connection,
 gateway and phone-local ports are distinct. No port scanning, unauthenticated
-legacy tcpip enablement, silent device switching or unattended daemon exists.
+legacy tcpip enablement or silent device switching is performed.
 Manual current endpoint entry supports networks without mDNS propagation.
+
+An opt-in `python -m codex_crew.mobile_recovery --connect IP:PORT` process
+restores a missing reverse tunnel every 15 seconds for exactly one selected,
+already paired phone. Run it under the host service manager for reboot recovery.
+It verifies the device and mapping, never opens the app, and logs state changes
+without endpoints. Changed phone ports require updating the service's endpoint;
+the helper never guesses ports or falls back to another connected phone.
+Direct HTTPS access avoids this dependency on a desktop ADB process entirely.
 
 The ADB help menu includes Samsung Auto Blocker assistance: explain the
 Security and privacy → Auto Blocker path, offer the public Android security

@@ -84,6 +84,13 @@ Android Back returns to the Crew-themed native setup card after dashboard histor
 
 ## Verification
 
+For automatic tunnel recovery after desktop restarts, run
+`python -m codex_crew.mobile_recovery --connect IP:CONNECTION_PORT` under your
+service manager. Keep that endpoint in local service configuration, outside Git.
+The phone must already be paired. This restores only the selected phone's tunnel;
+if Android changes its debugging port, update the endpoint. Use `--once` for a
+single recovery attempt. Direct HTTPS does not depend on this tunnel.
+
 ```sh
 python -m pytest -n 0 test/test_mobile.py
 sh mobile/android/test-address.sh

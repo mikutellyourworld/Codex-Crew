@@ -303,7 +303,7 @@ public class MainActivity extends Activity {
                     // Native-client presentation only; preserve keyboard focus indication.
                     view.evaluateJavascript("(() => { let s = document.getElementById('crew-native-style');"
                             + "if (!s) { s = document.createElement('style'); s.id = 'crew-native-style'; document.head.appendChild(s); }"
-                            + "s.textContent = 'header.topbar button:has(> svg.lucide-settings) { border: 0 !important; box-shadow: none !important; background: transparent !important; } header.topbar button:has(> svg.lucide-settings):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }'; })()", null);
+                            + "s.textContent = 'header.topbar button:has(> svg.lucide-settings) { border: 0 !important; box-shadow: none !important; background: transparent !important; } header.topbar button:has(> svg.lucide-settings):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; } [data-testid=instance-tab-bar-list-error] > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }'; })()", null);
                 }
             }
             @Override public void onReceivedHttpError(WebView view, WebResourceRequest request,
