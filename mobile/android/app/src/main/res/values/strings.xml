@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Codex Crew</string>
+    <string name="connect_title">Your crew, on your phone</string>
+    <string name="connect_help">Open your existing dashboard over HTTPS (including Tailscale), or use the local ADB connection prepared by the desktop assistant.</string>
+    <string name="address_hint">Dashboard address</string>
+    <string name="connect">Open dashboard</string>
+    <string name="connection">Connection</string>
+    <string name="retry">Retry</string>
+    <string name="pairing">ADB setup and pairing</string>
+    <string name="pairing_steps">USB and wireless pairing steps</string>
+    <string name="auto_blocker">Samsung Auto Blocker</string>
+    <string name="security_settings">Open security settings</string>
+    <string name="auto_blocker_help">If your Samsung phone says debugging or installation is blocked by Auto Blocker:\n\n1. Open Settings → Security and privacy → Auto Blocker. If the page differs, search Settings for Auto Blocker.\n2. Turn Auto Blocker off and confirm on the phone.\n3. Return to Developer options, enable the debugging mode you need, then retry pairing or installation.\n\nThis temporarily removes Auto Blocker protections, including blocking USB commands and unapproved app installations. Turn it back on when you finish debugging; doing so may interrupt ADB.\n\nThe app opens settings for you; you control the switch. Other Android brands may not have this setting. HTTPS dashboard access does not need Auto Blocker disabled.</string>
+    <string name="pairing_help">On the computer, run codexcrew-mobile to start assisted setup.\n\nUSB: enable USB debugging and accept the computer prompt.\n\nWireless: enable Wireless debugging, then choose Pair device with pairing code. Enter that popup’s address and code in the computer assistant.\n\nPairing and connection ports are different and can change. The assistant discovers current ports on your Wi-Fi. Across Tailscale, enter the current connection port from the main Wireless debugging page.\n\nA normal HTTPS dashboard connection does not require ADB.</string>
+    <string name="developer_settings">Open developer settings</string>
+    <string name="settings_unavailable">Enable Developer options in Android Settings first.</string>
+    <string name="invalid_address">Use an HTTPS dashboard address, or http://127.0.0.1:PORT for an ADB tunnel. Passwords and query strings are not saved.</string>
+    <string name="load_failed">Cannot reach the dashboard. Check the host and network. For ADB, rerun the computer assistant to refresh the connection and tunnel.</string>
+    <string name="external_link">Open this link in your browser?</string>
+    <string name="open">Open</string>
+    <string name="cancel">Cancel</string>
+    <string name="forget">Forget connection and sign out</string>
+    <string name="new_connection">Use this dashboard?</string>
+    <string name="ok">OK</string>
+</resources>
