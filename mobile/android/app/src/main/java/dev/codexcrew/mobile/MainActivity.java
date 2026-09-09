@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ProgressBar;
+import android.widget.FrameLayout;
 
 /** The gateway owns the dashboard, login, authorization and responsive layout. */
 public class MainActivity extends Activity {
@@ -183,7 +184,6 @@ public class MainActivity extends Activity {
         origin = ConnectionAddress.parse(address);
         getPreferences(MODE_PRIVATE).edit().putString("origin", origin).apply();
         frame();
-        button(root, R.string.connection, this::showConnection);
         TextView error = new TextView(this);
         error.setText(R.string.load_failed);
         error.setTextSize(16);
@@ -195,7 +195,12 @@ public class MainActivity extends Activity {
         ProgressBar loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         root.addView(loading, new LinearLayout.LayoutParams(-1, dp(3)));
         web = new WebView(this);
-        root.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        FrameLayout dashboard = new FrameLayout(this);
+        root.addView(dashboard, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        dashboard.addView(web, new FrameLayout.LayoutParams(-1, -1));
+        FloatingConnectionButton connection = new FloatingConnectionButton(
+                this, dashboard, getPreferences(MODE_PRIVATE), this::showConnection);
+        dashboard.addView(connection, new FrameLayout.LayoutParams(dp(48), dp(48)));
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -259,6 +264,12 @@ public class MainActivity extends Activity {
             }
             @Override public void onPageFinished(WebView view, String url) {
                 debug("page finished");
+                if (ConnectionAddress.sameOrigin(origin, url)) {
+                    // Native-client presentation only; preserve keyboard focus indication.
+                    view.evaluateJavascript("(() => { let s = document.getElementById('crew-native-style');"
+                            + "if (!s) { s = document.createElement('style'); s.id = 'crew-native-style'; document.head.appendChild(s); }"
+                            + "s.textContent = 'header.topbar button:has(> svg.lucide-settings) { border: 0 !important; box-shadow: none !important; background: transparent !important; } header.topbar button:has(> svg.lucide-settings):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }'; })()", null);
+                }
             }
             @Override public void onReceivedHttpError(WebView view, WebResourceRequest request,
                     android.webkit.WebResourceResponse response) {

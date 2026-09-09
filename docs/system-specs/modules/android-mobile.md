@@ -5,6 +5,11 @@ existing browser dashboard. The gateway remains the source of UI assets,
 authorization, tools and session behavior. No gateway API or policy changes
 are needed. Native setup and error controls must fit narrow and foldable
 screens, respond to system/IME insets and preserve WebView during resizing.
+Connection access is a 48dp floating ADB button at 50% opacity. Dragging moves
+it within the usable viewport and saves a normalized position; tapping opens
+setup. Resizing, folding and keyboard insets keep it on screen. The native
+client removes the Settings gear button border through a fixed presentation
+stylesheet on the selected dashboard origin, preserving keyboard focus styles.
 
 `codexcrew-mobile` (`mobile.py`, `mobile_gui.py`) is an operator-run host CLI
 and optional desktop form. It uses Android SDK ADB with argument arrays,
