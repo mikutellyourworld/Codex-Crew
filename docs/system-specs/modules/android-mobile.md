@@ -13,6 +13,8 @@ The native stylesheet also clips the compact instance error message within its
 allocated width so it cannot paint over the adjacent action. The shared web
 error component applies the same overflow protection and exposes full text in
 its title. This is presentation only; connection errors remain visible.
+The mobile Sessions drawer includes an Apps link to the installed-app library,
+so opening the session list does not leave app navigation undiscoverable.
 
 `codexcrew-mobile` (`mobile.py`, `mobile_gui.py`) is an operator-run host CLI
 and optional desktop form. It uses Android SDK ADB with argument arrays,
